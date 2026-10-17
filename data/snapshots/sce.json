@@ -249,6 +249,75 @@
    "stale": true,
    "snapshot": true,
    "note": "Saved historical ZIP average (demo snapshot). Not individual household telemetry."
+  },
+  "90265": {
+   "kind": "zip-benchmark",
+   "zip": "90265",
+   "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+   "fetchedAt": "2026-10-17T18:33:23Z",
+   "apiUrl": "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/sce-energy-data/records?where=zip_code%3D%2790265%27%20AND%20customer_class%3D%27Residential%27&order_by=year%20DESC,%20month%20DESC&limit=24",
+   "records": [
+    {
+     "zip_code": "90265",
+     "year": 2024,
+     "month": 6,
+     "customer_class": "Residential",
+     "combined": "Y",
+     "totalaccounts": 7915.0,
+     "totalkwh": 7282351.0,
+     "averagekwh": 920.069614655717,
+     "usable": true,
+     "days": 30,
+     "dailyKwh": 30.668987155190568,
+     "meanKw": 1.277874464799607
+    },
+    {
+     "zip_code": "90265",
+     "year": 2024,
+     "month": 5,
+     "customer_class": "Residential",
+     "combined": "Y",
+     "totalaccounts": 7935.0,
+     "totalkwh": 6996017.0,
+     "averagekwh": 881.66565847511,
+     "usable": true,
+     "days": 31,
+     "dailyKwh": 28.440827692745486,
+     "meanKw": 1.1850344871977285
+    },
+    {
+     "zip_code": "90265",
+     "year": 2024,
+     "month": 4,
+     "customer_class": "Residential",
+     "combined": "Y",
+     "totalaccounts": 7941.0,
+     "totalkwh": 7558299.0,
+     "averagekwh": 951.806951265584,
+     "usable": true,
+     "days": 30,
+     "dailyKwh": 31.726898375519465,
+     "meanKw": 1.3219540989799776
+    }
+   ],
+   "latest": {
+    "zip_code": "90265",
+    "year": 2024,
+    "month": 6,
+    "customer_class": "Residential",
+    "combined": "Y",
+    "totalaccounts": 7915.0,
+    "totalkwh": 7282351.0,
+    "averagekwh": 920.069614655717,
+    "usable": true,
+    "days": 30,
+    "dailyKwh": 30.668987155190568,
+    "meanKw": 1.277874464799607
+   },
+   "cached": true,
+   "stale": true,
+   "snapshot": true,
+   "note": "Malibu residential ZIP average fetched live from ORNL for the Bryson replay. Not household telemetry."
   }
  }
 }

@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PoweruP Poster</title>
+    <style>
+      /* 24 × 36 in portrait at 96 px/in = 2304 × 3456 px. Every number below is computed at load time
+         from the app's own data (scenarios/, config/, data/snapshots/) by engine.js + demo-model.js. */
+      @page {
+        size: 24in 36in;
+        margin: 0;
+      }
+      :root {
+        --ink: #102a3c;
+        --muted: #4f6779;
+        --line: #d5e0e8;
+        --green: #087e65;
+        --amber: #9a5d0b;
+        --red: #b83c3c;
+        --blue: #176ab8;
+        --violet: #7a3fa6;
+        --paper: #f6f9fb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        background: #c9d3da;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        color: var(--ink);
+      }
+      .toolbar {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 9;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: #fff;
+        padding: 8px 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 18px #0003;
+        font-size: 13px;
+      }
+      .toolbar button {
+        font: inherit;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #b9c7d1;
+        background: #eef3f6;
+        cursor: pointer;
+      }
+      .stage {
+        padding: 60px 0;
+        display: flex;
+        justify-content: center;
+      }
+      .poster {
+        width: 2304px;
+        height: 3456px;
+        background: var(--paper);
+        transform-origin: top center;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: 96px;
+        gap: 64px;
+        overflow: hidden;
+      }
+      header h1 {
+        font-size: 128px;
+        line-height: 1.04;
+        margin: 0 0 28px;
+        letter-spacing: -2px;
+      }
+      header .sub {
+        font-size: 44px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        border-top: 6px solid var(--green);
+        padding-top: 22px;
+      }
+      header .brand {
+        font-weight: 800;
+        color: var(--ink);
+      }
+      header .brand span {
+        color: var(--green);
+      }
+      main {
+        display: grid;
+        grid-template-columns: 620px 1fr 600px;
+        gap: 56px;
+        min-height: 0;
+      }
+      h2 {
+        font-size: 40px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 24px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 2px 10px;
+        border: 2px solid currentColor;
+        border-radius: 6px;
+        vertical-align: 4px;
+        font-style: normal;
+      }
+      .real {
+        color: var(--green);
+      }
+      .assumed,
+      .inferred {
+        color: var(--amber);
+      }
+      .mixed {
+        color: var(--blue);
+      }
+      .synthetic {
+        color: var(--violet);
+      }
+      /* Left: timeline strip */
+      .tl {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 36px;
+        border-left: 8px solid var(--line);
+      }
+      .tl li {
+        position: relative;
+        margin: 0 0 30px;
+        font-size: 28px;
+        line-height: 1.3;
+      }
+      .tl li::before {
+        content: "";
+        position: absolute;
+        left: -54px;
+        top: 8px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--line);
+        border: 5px solid var(--paper);
+      }
+      .tl li.step::before {
+        background: var(--amber);
+      }
+      .tl .when {
+        font-weight: 800;
+        font-size: 30px;
+      }
+      .tl .src {
+        color: var(--muted);
+        font-size: 22px;
+      }
+      .tl .grace {
+        margin-top: 8px;
+        padding: 10px 14px;
+        background: #fff;
+        border-left: 6px solid var(--amber);
+        border-radius: 6px;
+        font-size: 26px;
+      }
+      .tl .grace b {
+        color: var(--amber);
+        letter-spacing: 1px;
+      }
+      /* Center: map + numbers */
+      .center {
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        min-height: 0;
+      }
+      .map {
+        background: #fff;
+        border-radius: 24px;
+        padding: 24px;
+        border: 2px solid var(--line);
+      }
+      .map svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .map path {
+        fill: #ffe2b8;
+        stroke: var(--amber);
+        stroke-width: 3;
+      }
+      .map .caption {
+        font-size: 24px;
+        color: var(--muted);
+      }
+      .big {
+        display: grid;
+        gap: 28px;
+      }
+      .num {
+        background: #fff;
+        border-radius: 24px;
+        padding: 30px 40px;
+        border: 2px solid var(--line);
+      }
+      .num strong {
+        display: block;
+        font-size: 190px;
+        line-height: 1;
+        color: var(--green);
+        letter-spacing: -4px;
+      }
+      .num strong small {
+        font-size: 64px;
+        letter-spacing: 0;
+      }
+      .num .label {
+        font-size: 40px;
+        font-weight: 700;
+      }
+      .num .detail {
+        font-size: 26px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      /* Right column */
+      .card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 28px 32px;
+        border: 2px solid var(--line);
+        margin-bottom: 32px;
+        font-size: 27px;
+        line-height: 1.35;
+      }
+      .card h3 {
+        font-size: 36px;
+        margin: 0 0 12px;
+      }
+      .card .v {
+        font-size: 54px;
+        font-weight: 800;
+        color: var(--green);
+      }
+      .card table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 24px;
+      }
+      .card td {
+        border-top: 2px solid var(--line);
+        padding: 8px 6px;
+        vertical-align: top;
+      }
+      footer {
+        display: grid;
+        grid-template-columns: 300px 1fr auto;
+        gap: 48px;
+        align-items: center;
+        border-top: 6px solid var(--green);
+        padding-top: 40px;
+      }
+      footer img {
+        width: 300px;
+        height: 300px;
+        background: #fff;
+      }
+      footer .url {
+        font-size: 40px;
+        font-weight: 700;
+      }
+      footer .team {
+        font-size: 36px;
+      }
+      footer .legend {
+        font-size: 24px;
+        color: var(--muted);
+        max-width: 760px;
+        line-height: 1.4;
+      }
+      .err {
+        color: var(--red);
+        font-size: 40px;
+      }
+      body.print .toolbar {
+        display: none;
+      }
+      body.print .stage {
+        padding: 0;
+        display: block;
+      }
+      @media print {
+        html,
+        body {
+          background: none;
+        }
+        .toolbar {
+          display: none;
+        }
+        .stage {
+          padding: 0;
+        }
+        .poster {
+          transform: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <b>Poster 24×36 in</b>
+      <button id="png">Export PNG</button>
+      <button id="pdf" title="Print dialog → Save as PDF (page size 24×36 in is preset)">Export PDF</button>
+      <span id="status">Loading data…</span>
+    </div>
+    <div class="stage"><div class="poster" id="poster"></div></div>
+    <script src="engine.js"></script>
+    <script src="advanced.js"></script>
+    <script src="demo-model.js"></script>
+    <script>
+      "use strict";
+      const M = PowerupDemoModel,
+        $ = (id) => document.getElementById(id),
+        esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]),
+        tag = (p) => `<i class="tag ${String(p).toLowerCase().split(/[ ;]/)[0]}">${esc(p)}</i>`,
+        get = (u) => fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(Error(u + " " + r.status)))),
+        f = (x, d = 0) => (Number.isFinite(x) ? x.toFixed(d) : "—");
+      function when(e) {
+        if (!e.at) return e.when || "";
+        const o = { month: "short", day: "numeric", timeZone: "America/Los_Angeles" };
+        if (!e.dateOnly) Object.assign(o, { hour: "numeric", minute: "2-digit" });
+        return new Date(e.at).toLocaleString("en-US", o);
+      }
+      function mapSvg(feature) {
+        const rings = feature.geometry.type === "Polygon" ? feature.geometry.coordinates : feature.geometry.coordinates.flat();
+        const pts = rings.flat(),
+          xs = pts.map((p) => p[0]),
+          ys = pts.map((p) => p[1]),
+          x0 = Math.min(...xs),
+          y1 = Math.max(...ys),
+          k = Math.cos(((Math.min(...ys) + y1) / 2) * (Math.PI / 180)),
+          s = Math.min(1500 / ((Math.max(...xs) - x0) * k), 700 / (y1 - Math.min(...ys))),
+          px = (p) => (30 + (p[0] - x0) * k * s).toFixed(1) + "," + (30 + (y1 - p[1]) * s).toFixed(1);
+        const d = rings.map((r) => "M" + r.map(px).join("L") + "Z").join("");
+        const H = Math.ceil(60 + (y1 - Math.min(...ys)) * s);
+        return `<svg viewBox="0 0 1560 ${H}" role="img" aria-label="Census ZCTA 90265 outline"><path d="${d}"/><text x="${px([feature.properties.lon, feature.properties.lat]).split(",")[0]}" y="${px([feature.properties.lon, feature.properties.lat]).split(",")[1]}" font-size="56" font-weight="800" text-anchor="middle" fill="#102a3c">MALIBU · ZIP 90265</text></svg>`;
+      }
+      async function build() {
+        const [sce, zcta, index, funding, poster, qr] = await Promise.all([
+          get("data/snapshots/sce.json"),
+          get("data/snapshots/zcta.json"),
+          get("config/regions/index.json"),
+          get("config/funding.json"),
+          get("config/poster.json"),
+          fetch("assets/qr-demo.svg").then((r) => r.text()),
+        ]);
+        const snaps = { sce },
+          regions = [];
+        for (const id of index.regions) {
+          const r = M.validateRegion(await get(`config/regions/${id}.json`));
+          r.scenarioData = M.validateScenario(typeof r.scenario === "string" ? await get(r.scenario) : r.scenario);
+          r.run = M.runScenario(r.scenarioData, snaps, { medicalLabel: r.medicalLabel, currency: r.currency });
+          regions.push(r);
+        }
+        const la = regions.find((r) => r.id === "la-wildfire"),
+          sc = la.scenarioData,
+          run = la.run,
+          m = Object.fromEntries(run.metrics.map((x) => [x.id, x])),
+          circuits = sc.circuits.reduce((s, c) => s + (c.customers || 0), 0),
+          z = sce.zips[sc.zip].latest,
+          feature = zcta.features.find((x) => x.properties.zip === sc.zip),
+          perHome = (id, N) => (m[id].value / run.homes.length) * N,
+          doe = funding.programs[0];
+        $("poster").innerHTML = `
+          <header>
+            <h1>${esc(sc.pitch)}</h1>
+            <div class="sub"><span><span class="brand">Power<span>uP</span></span> · fleet command for home batteries, before and during a shutoff</span><span>${esc(poster.event)}</span></div>
+          </header>
+          <main>
+            <section>
+              <h2>Bryson Fire · replay</h2>
+              <ol class="tl">${sc.events
+                .map(
+                  (e) => `<li class="${e.grace ? "step" : ""}"><div class="when">${esc(when(e))}</div><div>${esc(e.label)}</div><div class="src">${esc(e.source)} ${tag(e.provenance)}</div>${
+                    e.grace ? `<div class="grace"><b>${esc(e.grace.phase)}</b> ${tag("INFERRED")}<br>${esc(e.grace.action)}</div>` : ""
+                  }</li>`,
+                )
+                .join("")}</ol>
+            </section>
+            <section class="center">
+              <div class="map">${feature ? mapSvg(feature) : ""}
+                <div class="caption">Six circuits de-energized: ${sc.circuits.map((c) => esc(c.name)).join(", ")} · ≈${circuits.toLocaleString()} customers on the five with a public count ${tag("REAL")} · Outline: 2020 Census ZCTA ${tag("REAL")}</div></div>
+              <div class="big">
+                <div class="num"><div class="label">Hours of backup per home ${tag("MIXED")}</div><strong>${f(m.backup.value)}<small> h</small></strong><div class="detail">with a per-home hours budget vs ${f(m.backup.baseline)} h for a full Base Core (39.2 kWh) with no plan, at Malibu's real average load (${f(z.meanKw, 2)} kW, SCE ${z.year}-${String(z.month).padStart(2, "0")})</div></div>
+                <div class="num"><div class="label">Homes kept on through ${run.cfg.duration} h ${tag("MIXED")}</div><strong>${m.kept.value}<small> of ${run.homes.length}</small></strong><div class="detail">${m.medical.value} of ${m.medical.unit.replace("/", "").trim()} Medical Baseline homes protected · ${m.kept.baseline} of ${run.homes.length} without a plan</div></div>
+                <div class="num"><div class="label">Peak headroom freed ${tag("ASSUMED")}</div><strong>${f(m.headroom.value)}<small> kW</small></strong><div class="detail">staggered charging vs everyone at once (${f(m.headroom.baseline)} kW) · restoration surge ${f(run.recharge.surgeKw)} → ${f(run.recharge.staggeredKw)} kW · ≈${f(perHome("headroom", 500) / 1000, 2)} MW at a 500-home pilot</div></div>
+              </div>
+            </section>
+            <section>
+              <h2>Two customers, one fleet</h2>
+              <div class="card"><h3>1 · Ordinary Tuesday</h3>SCE peak relief at 6 PM from energy above each home's reserve<div class="v">$${f(m.value.value, 2)} <small style="font-size:26px">per 2 h event, 6 homes</small></div>${tag("ASSUMED")} prices</div>
+              <div class="card"><h3>2 · Shutoff day</h3>Utility DR dispatcher and shutoff officer: staggered fill, per-home budgets, silent-battery triage, staggered recharge for <b>human approval</b>.</div>
+              <h2>Funding</h2>
+              <div class="card"><h3>${esc(doe.name)} <span style="font-size:24px;color:var(--muted)">primary</span></h3>${esc(doe.detail)}
+                <table>${doe.phases.map((p) => `<tr><td><b>${esc(p.phase)}</b></td><td>${esc(p.goal)}</td></tr>`).join("")}</table>
+                <div style="margin-top:10px">Alt: ${esc(funding.programs[1].name)}: base housing kept powered.</div></div>
+              <h2>One engine, any region</h2>
+              <div class="card"><table>${regions
+                .map((r) => {
+                  const k = Object.fromEntries(r.run.metrics.map((x) => [x.id, x]));
+                  return `<tr><td><b>${esc(r.name)}</b><br>${tag(r.provenance)}</td><td>${f(k.backup.value)} h backup · ${k.kept.value}/${r.run.homes.length} kept on</td></tr>`;
+                })
+                .join("")}</table><div style="margin-top:8px;font-size:22px;color:var(--muted)">Same engine code; only config/regions/*.json changes. Non-LA data is SYNTHETIC.</div></div>
+            </section>
+          </main>
+          <footer>
+            <img alt="QR code to the live demo" src="data:image/svg+xml;base64,${btoa(qr)}" />
+            <div><div class="url">${esc(poster.demoUrl.replace("https://", ""))}</div><div class="team">${poster.team.map(esc).join(" · ")}</div></div>
+            <div class="legend">${tag("REAL")} public data (NWS, SCE/ORNL, Census, City of Malibu, Cal Fire) · ${tag("INFERRED")} what PoweruP would have done · ${tag("ASSUMED")} battery state, consent, headroom, prices · ${tag("SYNTHETIC")} non-LA regions. Base Core 39.2 kWh; power rating assumed. Simulation only: no real Base customers, no messages sent.</div>
+          </footer>`;
+        fit();
+        $("status").textContent = "Ready · computed from app data";
+        document.body.dataset.ready = "1";
+      }
+      function fit() {
+        if (new URLSearchParams(location.search).has("print")) return document.body.classList.add("print");
+        const s = Math.min(1, (innerWidth - 40) / 2304);
+        $("poster").style.transform = `scale(${s})`;
+        $("poster").parentElement.style.height = 3456 * s + 120 + "px";
+      }
+      // PNG: serialize the poster into an SVG foreignObject and rasterize it (no libraries).
+      async function exportPng(scale = 1) {
+        const node = $("poster"),
+          css = [...document.styleSheets].flatMap((s) => [...s.cssRules].map((r) => r.cssText)).join("\n"),
+          html = new XMLSerializer().serializeToString(node).replace(/transform:[^;"]*;?/, ""),
+          svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${2304 * scale}" height="${3456 * scale}"><foreignObject width="2304" height="3456" transform="scale(${scale})"><div xmlns="http://www.w3.org/1999/xhtml"><style>${css}</style>${html}</div></foreignObject></svg>`,
+          img = new Image();
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+        await img.decode();
+        const c = document.createElement("canvas");
+        c.width = 2304 * scale;
+        c.height = 3456 * scale;
+        c.getContext("2d").drawImage(img, 0, 0);
+        const a = document.createElement("a");
+        a.download = "powerup-poster-24x36.png";
+        a.href = c.toDataURL("image/png");
+        a.click();
+      }
+      $("png").onclick = () => exportPng(1).catch((e) => ($("status").textContent = "PNG export failed: " + e.message + ". Use Export PDF."));
+      $("pdf").onclick = () => print();
+      addEventListener("resize", fit);
+      build().catch((e) => {
+        $("poster").innerHTML = `<p class="err">Poster data failed to load: ${esc(e.message)}. Serve the folder (start-windows.bat / start-mac.sh) and open /poster.html.</p>`;
+        $("status").textContent = "Error";
+      });
+    </script>
+  </body>
+</html>

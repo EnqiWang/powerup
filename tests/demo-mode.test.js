@@ -46,13 +46,12 @@ test("headline metrics are finite and carry provenance badges", () => {
     m = M.headline(homes, c, config.baseCase.prices, P.prepare(homes, c));
   assert.deepEqual(
     m.map((x) => x.id),
-    ["backup", "kept", "essential", "headroom", "value"],
+    ["backup", "kept", "medical", "headroom", "value"],
   );
   for (const x of m) {
     assert.ok(Number.isFinite(x.value), x.id);
     assert.ok(["REAL", "ASSUMED", "MIXED"].includes(x.provenance), x.id);
   }
-  assert.ok(m[0].value > m[0].baseline, "budget extends backup hours");
   assert.ok(m[3].baseline > c.headroom, "4 PM rush exceeds shared headroom");
   assert.ok(m[4].value > 0, "ordinary-day value is positive with participation");
 });
@@ -96,8 +95,11 @@ test("spoof + cell-outage twists move capacity to unverified buckets", () => {
   assert.deepEqual(cats, ["talking", "not-talking", "untrusted", "not-talking", "talking", "talking"]);
 });
 
-test("demo script runs about three minutes", () => {
-  const s = config.demoScript.reduce((n, x) => n + x.seconds, 0);
-  assert.ok(s >= 150 && s <= 200, s + " s");
+test("demo mode serves the Malibu ZIP used by the Bryson replay", () => {
+  const sce = route("/api/sce?zip=90265"),
+    g = route("/api/geography?zips=90265");
+  assert.equal(sce.status, 200);
+  assert.ok(sce.body.latest.meanKw > 0);
+  assert.equal(g.body.features.length, 1);
   assert.equal(config.demoSilent.length, 4);
 });

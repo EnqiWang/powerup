@@ -1,0 +1,7 @@
+{
+  "schema": "powerup.poster.v1",
+  "team": ["TEAM NAME 1", "TEAM NAME 2", "TEAM NAME 3"],
+  "teamNote": "Replace with real team names, then re-export (see README → Poster).",
+  "demoUrl": "https://enqiwang.github.io/powerup/?demo=1",
+  "event": "Dual-Use Hackathon · Energy track with Base Power"
+}

@@ -1,501 +1,652 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#080f17" />
+    <title>PoweruP · Fleet command</title>
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("powerup-theme");
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#080f17" />
-  <title>PoweruP · Fleet command</title>
-  <script>
-    try {
-      const savedTheme = localStorage.getItem("powerup-theme");
+        document.documentElement.dataset.theme =
+          savedTheme === "dark" || savedTheme === "light"
+            ? savedTheme
+            : window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "dark"
+              : "light";
+      } catch (error) {
+        document.documentElement.dataset.theme = "light";
+      }
+    </script>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="style.css?v=19" />
+    <link rel="stylesheet" href="demo.css?v=19" />
+  </head>
 
-      document.documentElement.dataset.theme =
-        savedTheme === "dark" || savedTheme === "light"
-          ? savedTheme
-          : window.matchMedia("(prefers-color-scheme: light)").matches
-            ? "dark"
-            : "light";
-    } catch (error) {
-      document.documentElement.dataset.theme = "light";
-    }
-  </script>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="style.css?v=17" />
-</head>
-
-<body>
-  <aside class="rail">
-    <div class="rail-logo">
-      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        <path d="M18 3 7 18h8l-1 11 12-17h-9l1-9Z" fill="currentColor" />
-      </svg>
-    </div>
-    <div class="rail-nav">
-      <button data-view="operations" title="Overview" aria-label="Overview" class="rail-button active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <rect x="3" y="3" width="7" height="7" rx="2" />
-          <rect x="14" y="3" width="7" height="7" rx="2" />
-          <rect x="3" y="14" width="7" height="7" rx="2" />
-          <rect x="14" y="14" width="7" height="7" rx="2" />
-        </svg><span>Overview</span></button><button data-view="data" title="Data sources" aria-label="Data sources"
-        class="rail-button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M4 7 12 3l8 4-8 4-8-4Zm0 5 8 4 8-4M4 17l8 4 8-4" />
-        </svg><span>Data sources</span></button><button data-view="residents" title="Resident alerts"
-        aria-label="Resident alerts" class="rail-button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <path d="M3 5h18v13H8l-5 3V5Z" />
-          <path d="m4 6 8 7 8-7" />
-        </svg><span>Resident alerts</span>
-      </button>
-    </div>
-    <div class="rail-end">
-      <span class="connection-dot"></span><span>DEMO</span>
-      <div class="avatar">LA</div>
-    </div>
-  </aside>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">Power<span>uP</span><small>FLEET COMMAND</small></div>
-      <div class="top-location">
-        <span class="connection-dot"></span> Los Angeles County <span class="separator">/</span> Energy
-        resilience
+  <body>
+    <aside class="rail">
+      <div class="rail-logo">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M18 3 7 18h8l-1 11 12-17h-9l1-9Z" fill="currentColor" />
+        </svg>
       </div>
-      <div class="badge" id="dataBadge">AWAITING ZIP DATA · SIMULATED BATTERIES</div>
-      <div class="theme-switch" role="group" aria-label="Color theme">
-        <button type="button" data-theme-choice="light" aria-pressed="false">
-          ☀ Light
-        </button>
-
-        <button type="button" data-theme-choice="dark" aria-pressed="false">
-          ☾ Dark
+      <div class="rail-nav">
+        <button data-view="operations" title="Overview" aria-label="Overview" class="rail-button active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="3" y="3" width="7" height="7" rx="2" />
+            <rect x="14" y="3" width="7" height="7" rx="2" />
+            <rect x="3" y="14" width="7" height="7" rx="2" />
+            <rect x="14" y="14" width="7" height="7" rx="2" /></svg
+          ><span>Overview</span></button
+        ><button data-view="data" title="Data sources" aria-label="Data sources" class="rail-button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M4 7 12 3l8 4-8 4-8-4Zm0 5 8 4 8-4M4 17l8 4 8-4" /></svg
+          ><span>Data sources</span></button
+        ><button
+          data-view="residents"
+          title="Resident alerts"
+          aria-label="Resident alerts"
+          class="rail-button"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 5h18v13H8l-5 3V5Z" />
+            <path d="m4 6 8 7 8-7" /></svg
+          ><span>Resident alerts</span>
         </button>
       </div>
-    </header>
-    <main>
-      <div class="pagehead">
-        <div>
-          <div class="eyebrow">OPERATIONS / LOS ANGELES</div>
-          <h1>Stay ahead of the outage<span>.</span></h1>
-          <p>Prepare earlier. Keep essential power in reserve.</p>
-        </div>
-        <div class="global-actions">
-          <button id="jumpNotify">Resident alerts ↓</button><button id="guided" class="primary">Start guided demo
-            ▶</button><button id="reset">Reset session</button><button id="export">Export scenario ↓</button>
-        </div>
+      <div class="rail-end">
+        <span class="connection-dot"></span><span>DEMO</span>
+        <div class="avatar">LA</div>
       </div>
-      <div id="tour" class="tour" hidden>
-        <div>
-          <div class="eyebrow">GUIDED DEMO · EXPLICIT SCENARIO ACTIONS</div>
-          <h2 id="tourTitle"></h2>
-          <p id="tourText"></p>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">Power<span>uP</span><small>FLEET COMMAND</small></div>
+        <div class="top-location">
+          <span class="connection-dot"></span> Los Angeles County <span class="separator">/</span> Energy
+          resilience
         </div>
-        <button id="tourNext" class="primary">Next →</button><button id="tourClose">Close</button>
-      </div>
-      <section data-app-view="operations" class="app-view">
-        <div class="journey" aria-label="Operating mode">
-          <button data-mode="prepare" class="active">
-            <b>01</b> Storm preparation<span>Schedule energy before the outage</span></button><button
-            data-mode="outage">
-            <b>02</b> Outage budget<span>Stretch the energy already stored</span></button><button data-mode="shield">
-            <b>03</b> Neighborhood shield<span>Relieve a modeled feeder constraint</span></button><button
-            data-mode="everyday">
-            <b>04</b> Ordinary Tuesday<span>Support the grid above reserves</span>
-          </button>
+        <div class="badge" id="dataBadge">AWAITING ZIP DATA · SIMULATED BATTERIES</div>
+        <div class="theme-switch" role="group" aria-label="Color theme">
+          <button type="button" data-theme-choice="light" aria-pressed="false">☀ Light</button>
+
+          <button type="button" data-theme-choice="dark" aria-pressed="false">☾ Dark</button>
         </div>
-        <div class="overview-tools">
+      </header>
+      <main>
+        <div class="pagehead">
           <div>
-            <span class="connection-dot"></span> FLEET READINESS
-            <span class="muted">/ operator workspace</span>
+            <div class="eyebrow">OPERATIONS / LOS ANGELES</div>
+            <h1>Stay ahead of the outage<span>.</span></h1>
+            <p>Prepare earlier. Keep essential power in reserve.</p>
           </div>
-          <button data-view="data" class="connect-data">Connect ZIP data <span>↗</span></button>
+          <div class="global-actions">
+            <button id="jumpNotify">Resident alerts ↓</button
+            ><button id="guided" class="primary">Start guided demo ▶</button
+            ><button id="reset">Reset session</button><button id="export">Export scenario ↓</button>
+          </div>
         </div>
-        <div class="workspace">
-          <aside class="panel control">
-            <div id="visualGauge" class="reserve-gauge"></div>
-            <div class="eyebrow">PLANNING CONSTRAINTS</div>
-            <h2 id="modeTitle">Prepare before disruption.</h2>
-            <p class="small" id="modeDescription">
-              Fleet dispatcher: allocate limited charging headroom while respecting household priorities.
-            </p>
-            <label>Target duration (hours)<input id="duration" type="number" min="0.25" max="168" step="0.25"
-                value="24" /></label><label>Preparation window (hours)<input id="lead" type="number" min="0.25" max="48"
-                step="0.25" value="6" /></label><label>Available charging headroom (kW)<input id="headroom"
-                type="number" min="0" max="10000" step="0.5" value="8" /></label><label>Minimum pre-outage reserve
-              (%)<input id="floor" type="number" min="0" max="100" value="20" /></label>
-            <p class="small">
-              Headroom excludes background load. Reserve percentage is an operator scenario, not a universal
-              Base policy.
-            </p>
-            <button id="plan" class="primary wide" hidden>Recalculate preview</button>
-            <div class="auto-calc-note">
-              <span class="connection-dot"></span> Calculations update automatically
+        <div id="tour" class="tour" hidden>
+          <div>
+            <div class="eyebrow">GUIDED DEMO · EXPLICIT SCENARIO ACTIONS</div>
+            <h2 id="tourTitle"></h2>
+            <p id="tourText"></p>
+          </div>
+          <button id="tourNext" class="primary">Next →</button><button id="tourClose">Close</button>
+        </div>
+        <section data-app-view="operations" class="app-view">
+          <div class="journey" aria-label="Operating mode">
+            <button data-mode="prepare" class="active">
+              <b>01</b> Storm preparation<span>Schedule energy before the outage</span></button
+            ><button data-mode="outage">
+              <b>02</b> Outage budget<span>Stretch the energy already stored</span></button
+            ><button data-mode="shield">
+              <b>03</b> Neighborhood shield<span>Relieve a modeled feeder constraint</span></button
+            ><button data-mode="everyday">
+              <b>04</b> Ordinary Tuesday<span>Support the grid above reserves</span>
+            </button>
+          </div>
+          <div class="overview-tools">
+            <div>
+              <span class="connection-dot"></span> FLEET READINESS
+              <span class="muted">/ operator workspace</span>
             </div>
-            <button id="approve" class="wide" disabled>Review &amp; approve</button><button id="stress" class="wide">LA
-              historical stress test · 43 h</button>
-            <div id="outageControls" hidden>
-              <hr />
-              <button id="startOutage" class="primary wide">Start outage simulation</button><button id="advance"
-                class="wide" disabled>Advance 1 hour →</button><button id="finish" class="wide" disabled>Advance to
-                target</button>
-              <p class="small">
-                Uses approved projected charge if available. This is a local simulator; no physical
-                equipment is controlled.
+            <button data-view="data" class="connect-data">Connect ZIP data <span>↗</span></button>
+          </div>
+          <div class="workspace">
+            <aside class="panel control">
+              <div id="visualGauge" class="reserve-gauge"></div>
+              <div class="eyebrow">PLANNING CONSTRAINTS</div>
+              <h2 id="modeTitle">Prepare before disruption.</h2>
+              <p class="small" id="modeDescription">
+                Fleet dispatcher: allocate limited charging headroom while respecting household priorities.
               </p>
-            </div>
-            <div id="shieldControls" hidden>
-              <hr />
-              <label>Scenario feeder capacity (kW)<input id="feederCapacity" type="number" min="0" max="10000" step="1"
-                  value="20" /></label><label>Support event duration (hours)<input id="reliefHours" type="number"
-                  min="0.25" max="24" step="0.25" value="2" /></label>
+              <label
+                >Target duration (hours)<input
+                  id="duration"
+                  type="number"
+                  min="0.25"
+                  max="168"
+                  step="0.25"
+                  value="24" /></label
+              ><label
+                >Preparation window (hours)<input
+                  id="lead"
+                  type="number"
+                  min="0.25"
+                  max="48"
+                  step="0.25"
+                  value="6" /></label
+              ><label
+                >Available charging headroom (kW)<input
+                  id="headroom"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  step="0.5"
+                  value="8" /></label
+              ><label
+                >Minimum pre-outage reserve (%)<input id="floor" type="number" min="0" max="100" value="20"
+              /></label>
               <p class="small">
-                External loads below are hypothetical neighbors, not controlled equipment or actual LA port
-                demand.
+                Headroom excludes background load. Reserve percentage is an operator scenario, not a universal
+                Base policy.
               </p>
-              <label>Cold-store demand (kW)<input id="coldKw" type="number" min="0" max="1000" step="0.5"
-                  value="8" /></label><label>Communications demand (kW)<input id="commsKw" type="number" min="0"
-                  max="1000" step="0.5" value="3" /></label><label>Port/security demand (kW)<input id="portKw"
-                  type="number" min="0" max="1000" step="0.5" value="6" /></label><button id="shieldTwist"
-                class="wide">Twist: capacity drops 25%</button>
-              <p class="small">
-                This is a single-bus feasibility scenario, not validated power flow. During an actual grid
-                shutoff, isolated home batteries cannot supply these neighbors.
-              </p>
-            </div>
-            <div id="priceControls" hidden>
-              <hr />
-              <label>Assumed recharge price ($/kWh)<input id="buy" type="number" min="0" max="10" step="0.01"
-                  value="0.15" /></label><label>Assumed export credit ($/kWh)<input id="sell" type="number" min="0"
-                  max="10" step="0.01" value="0.40" /></label><label>Ordinary-day reserve target (hours)<input
-                  id="dailyReserve" type="number" min="0.25" max="168" step="0.25"
-                  value="6" /></label><label>Grid-support event (hours)<input id="eventHours" type="number" min="0.25"
-                  max="24" step="0.25" value="2" /></label>
-              <p class="small">
-                Illustrative prices, not SCE tariffs. Contribution excludes fees, wear, household
-                consumption during the event, and market eligibility. No export-rate limit is verified.
-              </p>
-            </div>
-          </aside>
-          <section class="content">
-            <div class="metrics" id="metrics"></div>
-            <div class="banner" id="banner" role="status" aria-live="polite"></div>
-            <div class="panel">
+              <button id="plan" class="primary wide" hidden>Recalculate preview</button>
+              <div class="auto-calc-note">
+                <span class="connection-dot"></span> Calculations update automatically
+              </div>
+              <button id="approve" class="wide" disabled>Review &amp; approve</button
+              ><button id="stress" class="wide">LA historical stress test · 43 h</button>
+              <div id="outageControls" hidden>
+                <hr />
+                <button id="startOutage" class="primary wide">Start outage simulation</button
+                ><button id="advance" class="wide" disabled>Advance 1 hour →</button
+                ><button id="finish" class="wide" disabled>Advance to target</button>
+                <p class="small">
+                  Uses approved projected charge if available. This is a local simulator; no physical
+                  equipment is controlled.
+                </p>
+              </div>
+              <div id="shieldControls" hidden>
+                <hr />
+                <label
+                  >Scenario feeder capacity (kW)<input
+                    id="feederCapacity"
+                    type="number"
+                    min="0"
+                    max="10000"
+                    step="1"
+                    value="20" /></label
+                ><label
+                  >Support event duration (hours)<input
+                    id="reliefHours"
+                    type="number"
+                    min="0.25"
+                    max="24"
+                    step="0.25"
+                    value="2"
+                /></label>
+                <p class="small">
+                  External loads below are hypothetical neighbors, not controlled equipment or actual LA port
+                  demand.
+                </p>
+                <label
+                  >Cold-store demand (kW)<input
+                    id="coldKw"
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="0.5"
+                    value="8" /></label
+                ><label
+                  >Communications demand (kW)<input
+                    id="commsKw"
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="0.5"
+                    value="3" /></label
+                ><label
+                  >Port/security demand (kW)<input
+                    id="portKw"
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="0.5"
+                    value="6" /></label
+                ><button id="shieldTwist" class="wide">Twist: capacity drops 25%</button>
+                <p class="small">
+                  This is a single-bus feasibility scenario, not validated power flow. During an actual grid
+                  shutoff, isolated home batteries cannot supply these neighbors.
+                </p>
+              </div>
+              <div id="priceControls" hidden>
+                <hr />
+                <label
+                  >Assumed recharge price ($/kWh)<input
+                    id="buy"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.01"
+                    value="0.15" /></label
+                ><label
+                  >Assumed export credit ($/kWh)<input
+                    id="sell"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.01"
+                    value="0.40" /></label
+                ><label
+                  >Ordinary-day reserve target (hours)<input
+                    id="dailyReserve"
+                    type="number"
+                    min="0.25"
+                    max="168"
+                    step="0.25"
+                    value="6" /></label
+                ><label
+                  >Grid-support event (hours)<input
+                    id="eventHours"
+                    type="number"
+                    min="0.25"
+                    max="24"
+                    step="0.25"
+                    value="2"
+                /></label>
+                <p class="small">
+                  Illustrative prices, not SCE tariffs. Contribution excludes fees, wear, household
+                  consumption during the event, and market eligibility. No export-rate limit is verified.
+                </p>
+              </div>
+            </aside>
+            <section class="content">
+              <div class="metrics" id="metrics"></div>
+              <div class="banner" id="banner" role="status" aria-live="polite"></div>
+              <div class="panel">
+                <div class="panelhead">
+                  <div>
+                    <h2 id="fleetTitle">ZIP profile readiness</h2>
+                    <div class="small">
+                      One representative battery per ZIP average · not an actual enrolled household or
+                      ZIP-wide backup
+                    </div>
+                  </div>
+                  <label class="toggle"
+                    ><input id="projected" type="checkbox" /> Use projected preparation energy</label
+                  >
+                </div>
+                <div id="map"></div>
+                <div class="legend">
+                  <i class="dot green"></i>Target met <i class="dot orange"></i>Shortfall
+                  <i class="dot gray"></i>Unknown
+                </div>
+              </div>
+              <div class="panel" style="margin-top: 18px">
+                <div class="panelhead">
+                  <h2 id="chartTitle">Preparation charging</h2>
+                  <span class="small" id="chartLabel">Build a plan</span>
+                </div>
+                <div id="chart" class="chart"></div>
+              </div>
+            </section>
+            <aside class="detail panel">
+              <div class="panelhead">
+                <h2 id="selectedName">Profile detail</h2>
+                <span id="selectedStatus" class="status"></span>
+              </div>
+              <div id="detail"></div>
+            </aside>
+          </div>
+          <details class="advanced-disclosure">
+            <summary>
+              Decision trail, response ladder & model evidence
+              <span>Explore the reasoning behind each action ↗</span>
+            </summary>
+            <section class="panel" style="margin-top: 20px">
               <div class="panelhead">
                 <div>
-                  <h2 id="fleetTitle">ZIP profile readiness</h2>
-                  <div class="small">
-                    One representative battery per ZIP average · not an actual enrolled household or
-                    ZIP-wide backup
-                  </div>
+                  <h2>Watch → ask → slow → hold → hand off</h2>
+                  <div class="small">Action ladder with evidence, permission and an operator handoff</div>
                 </div>
-                <label class="toggle"><input id="projected" type="checkbox" /> Use projected preparation energy</label>
+                <button id="simulatePeerLoss">Twist: shared network loss</button>
               </div>
-              <div id="map"></div>
-              <div class="legend">
-                <i class="dot green"></i>Target met <i class="dot orange"></i>Shortfall
-                <i class="dot gray"></i>Unknown
-              </div>
-            </div>
-            <div class="panel" style="margin-top: 18px">
-              <div class="panelhead">
-                <h2 id="chartTitle">Preparation charging</h2>
-                <span class="small" id="chartLabel">Build a plan</span>
-              </div>
-              <div id="chart" class="chart"></div>
-            </div>
-          </section>
-          <aside class="detail panel">
-            <div class="panelhead">
-              <h2 id="selectedName">Profile detail</h2>
-              <span id="selectedStatus" class="status"></span>
-            </div>
-            <div id="detail"></div>
-          </aside>
-        </div>
-        <details class="advanced-disclosure">
-          <summary>
-            Decision trail, response ladder & model evidence
-            <span>Explore the reasoning behind each action ↗</span>
-          </summary>
-          <section class="panel" style="margin-top: 20px">
-            <div class="panelhead">
-              <div>
-                <h2>Watch → ask → slow → hold → hand off</h2>
-                <div class="small">Action ladder with evidence, permission and an operator handoff</div>
-              </div>
-              <button id="simulatePeerLoss">Twist: shared network loss</button>
-            </div>
-            <div id="ladder" class="ladder"></div>
-          </section>
-          <div class="bottom">
-            <section class="panel">
-              <div class="panelhead">
-                <h2>Decision trail</h2>
-                <span class="small">Simulated requests &amp; approvals</span>
-              </div>
-              <div id="log" aria-live="polite"></div>
+              <div id="ladder" class="ladder"></div>
             </section>
-            <section class="panel">
-              <div class="panelhead">
-                <h2>Two customers, one engine.</h2>
-              </div>
-              <div class="padding">
-                <p>
-                  <b>Before a crisis:</b> a home-battery fleet dispatcher prepares households for a possible
-                  shutoff.
-                </p>
-                <p>
-                  <b>Ordinary Tuesday:</b> a utility demand-response dispatcher evaluates grid support above
-                  household reserves.
-                </p>
-                <p class="small">
-                  SCE public monthly aggregates are accessed through ORNL; there is no SCE customer-account
-                  or dispatch integration. Base Core capacity is modeled at 39.2 kWh. No Base API access,
-                  remote islanding, tariff eligibility or verified local controller is claimed.
-                </p>
-                <details>
-                  <summary>Model &amp; evidence</summary>
-                  <p class="small">
-                    Historical load profiles are averaged demand proxies. Device shares, essential needs and
-                    consent responses are scenario inputs. Stored energy, power limits, 90% charge/discharge
-                    efficiencies, constant-load approximation and outage timing are assumed. The preparation
-                    scheduler uses priority tiers then shortest backup coverage, not global optimization. No
-                    solar or household consumption during preparation is simulated; input headroom excludes
-                    background demand. Reserve policies protect against normal-day export, not against using
-                    the battery for backup during an outage. Insufficient energy can still interrupt
-                    essential service.
-                  </p>
-                  <p class="small">
-                    The 43-hour replay rounds a 43-hour 2-minute SCE ACROBAT circuit outage in LA County,
-                    January 8–10, 2025. It is not a current or typical outage forecast. SCE PSPS rules do
-                    not automatically apply to LADWP territory.
-                  </p>
-                  <p class="small">
-                    <a href="https://www.basepowercompany.com/specs/core" target="_blank" rel="noopener">Base
-                      specifications</a>
-                    ·
-                    <a href="https://www.sce.com/outages-safety/wildfire-safety/public-safety-power-shutoff/psps-weather-dashboard"
-                      target="_blank" rel="noopener">SCE PSPS dashboard</a>
-                    ·
-                    <a href="https://data.open-power-system-data.org/household_data/2020-04-15/" target="_blank"
-                      rel="noopener">OPSD source</a>
-                  </p>
-                </details>
-              </div>
-            </section>
-          </div>
-        </details>
-      </section>
-      <section data-app-view="data" class="app-view" hidden>
-        <div class="view-heading">
-          <div>
-            <div class="eyebrow">EVIDENCE / DATA CONNECTIONS</div>
-            <h2>Start with a real signal.</h2>
-            <p>Load SCE records and weather. Every source keeps its reporting date.</p>
-          </div>
-          <button data-view="operations">Back to operations ↗</button>
-        </div>
-        <section class="panel sce-panel" aria-labelledby="sceTitle">
-          <div class="panelhead">
-            <div>
-              <div class="eyebrow">PUBLIC DATA / NO UTILITY ACCOUNT REQUIRED</div>
-              <h2 id="sceTitle">Real LA-area demand benchmarks.</h2>
-              <p class="small">
-                SCE monthly residential ZIP averages, delivered through ORNL OpenEnergy Hub. Historical
-                aggregates, not individual home readings.
-              </p>
-            </div>
-          </div>
-          <div class="padding">
-            <div class="inline">
-              <label style="flex: 1">ZIP codes (up to six, separated by commas)<input id="sceZips" type="text"
-                  value="90002,90008,90022,90040,90045,90046" /></label><button id="loadSce" class="primary">Load SCE
-                API ↻</button><button id="offlineData">Open saved SCE snapshot</button><button id="applySce"
-                disabled>Apply ZIP scenarios →</button>
-            </div>
-            <p id="sceStatus" class="small" role="status">
-              Not loaded. Load public records to populate the planner with ZIP usage scenarios.
-            </p>
-            <div id="sceRecords" class="sce-records"></div>
-            <p class="small">
-              Monthly kWh ÷ calendar days ÷ 24 gives an average kW benchmark. Hourly behavior, appliance
-              shares, battery charge and priorities remain assumptions. ZIPs may span utility territories;
-              these records describe SCE accounts only. A ZIP code does not establish feeder membership.
-            </p>
-          </div>
-        </section>
-        <div class="tools">
-          <details open="">
-            <summary>
-              Household measurements &amp; live weather <span id="sourceMini">No demand data loaded</span>
-            </summary>
-            <div class="toolgrid">
-              <section>
-                <h3>Measured household profiles</h3>
-                <p class="small">
-                  OPSD provides six historical German residential grid-import profiles. They are demand
-                  proxies, not LA measurements or battery telemetry.
-                </p>
-                <button id="loadData">Load six measured profiles</button>
-                <button id="importButton">Import profile JSON</button>
-                <button id="uploadCsv">Load downloaded OPSD CSV</button><input id="rawCsvFile" type="file"
-                  accept=".csv,text/csv" hidden />
-                <button id="loadSnapshot">Open saved demo</button><input id="snapshotFile" type="file" accept=".json"
-                  hidden /><input id="importFile" type="file" accept=".json" hidden />
-                <p id="source" class="small" role="status">
-                  No demand records loaded. Load SCE ZIP data or import measured household profiles.
-                </p>
+            <div class="bottom">
+              <section class="panel">
+                <div class="panelhead">
+                  <h2>Decision trail</h2>
+                  <span class="small">Simulated requests &amp; approvals</span>
+                </div>
+                <div id="log" aria-live="polite"></div>
               </section>
-              <section>
-                <h3>National Weather Service</h3>
-                <div class="inline">
-                  <label>Latitude<input id="lat" type="number" min="-90" max="90" step="any"
-                      value="34.0224" /></label><label>Longitude<input id="lon" type="number" min="-180" max="180"
-                      step="any" value="-118.2851" /></label><button id="weather">Load weather</button>
+              <section class="panel">
+                <div class="panelhead">
+                  <h2>Two customers, one engine.</h2>
                 </div>
-                <div id="readiness" class="readiness">Weather not assessed</div>
-                <p id="weatherStatus" class="small" role="status">
-                  Not loaded. Weather informs a review; it is not a confirmed shutoff.
-                </p>
-                <div id="alerts"></div>
+                <div class="padding">
+                  <p>
+                    <b>Before a crisis:</b> a home-battery fleet dispatcher prepares households for a possible
+                    shutoff.
+                  </p>
+                  <p>
+                    <b>Ordinary Tuesday:</b> a utility demand-response dispatcher evaluates grid support above
+                    household reserves.
+                  </p>
+                  <p class="small">
+                    SCE public monthly aggregates are accessed through ORNL; there is no SCE customer-account
+                    or dispatch integration. Base Core capacity is modeled at 39.2 kWh. No Base API access,
+                    remote islanding, tariff eligibility or verified local controller is claimed.
+                  </p>
+                  <details>
+                    <summary>Model &amp; evidence</summary>
+                    <p class="small">
+                      Historical load profiles are averaged demand proxies. Device shares, essential needs and
+                      consent responses are scenario inputs. Stored energy, power limits, 90% charge/discharge
+                      efficiencies, constant-load approximation and outage timing are assumed. The preparation
+                      scheduler uses priority tiers then shortest backup coverage, not global optimization. No
+                      solar or household consumption during preparation is simulated; input headroom excludes
+                      background demand. Reserve policies protect against normal-day export, not against using
+                      the battery for backup during an outage. Insufficient energy can still interrupt
+                      essential service.
+                    </p>
+                    <p class="small">
+                      The 43-hour replay rounds a 43-hour 2-minute SCE ACROBAT circuit outage in LA County,
+                      January 8–10, 2025. It is not a current or typical outage forecast. SCE PSPS rules do
+                      not automatically apply to LADWP territory.
+                    </p>
+                    <p class="small">
+                      <a href="https://www.basepowercompany.com/specs/core" target="_blank" rel="noopener"
+                        >Base specifications</a
+                      >
+                      ·
+                      <a
+                        href="https://www.sce.com/outages-safety/wildfire-safety/public-safety-power-shutoff/psps-weather-dashboard"
+                        target="_blank"
+                        rel="noopener"
+                        >SCE PSPS dashboard</a
+                      >
+                      ·
+                      <a
+                        href="https://data.open-power-system-data.org/household_data/2020-04-15/"
+                        target="_blank"
+                        rel="noopener"
+                        >OPSD source</a
+                      >
+                    </p>
+                  </details>
+                </div>
               </section>
             </div>
           </details>
-        </div>
-      </section>
-      <section data-app-view="residents" class="app-view" hidden>
-        <div class="view-heading">
-          <div>
-            <div class="eyebrow">OUTREACH / PREPARATION WINDOW</div>
-            <h2>Get people ready, too.</h2>
-            <p>ZIP-targeted preparation alerts and reminders, with a simulated delivery timeline.</p>
+        </section>
+        <section data-app-view="data" class="app-view" hidden>
+          <div class="view-heading">
+            <div>
+              <div class="eyebrow">EVIDENCE / DATA CONNECTIONS</div>
+              <h2>Start with a real signal.</h2>
+              <p>Load SCE records and weather. Every source keeps its reporting date.</p>
+            </div>
+            <button data-view="operations">Back to operations ↗</button>
           </div>
-          <button data-view="operations">Back to operations ↗</button>
-        </div>
-        <section class="panel notify-panel" aria-labelledby="notifyTitle">
-          <div class="panelhead">
-            <div>
-              <div class="eyebrow">PREPARE THE PEOPLE / SIMULATED EMAIL &amp; SMS</div>
-              <h2 id="notifyTitle">A warning with time to act.</h2>
-              <p class="small">
-                Target registered home ZIPs, not phone area codes. All messages and shutoff times in this
-                panel are demo scenarios.
-              </p>
-            </div>
-            <button id="seedContacts">Load demo subscribers</button>
-          </div>
-          <div class="notify-grid padding">
-            <div>
-              <h3>1 · Resident enrollment</h3>
-              <p class="small">
-                Try fictional contacts first. Contact details stay in this browser session; no provider
-                receives them.
-              </p>
-              <div class="fields">
-                <label>Name<input id="contactName" type="text" maxlength="60"
-                    placeholder="Test resident" /></label><label>Home ZIP<input id="contactZip" type="text"
-                    inputmode="numeric" maxlength="5" value="90002" /></label><label>Channel<select id="contactChannel">
-                    <option value="sms">SMS</option>
-                    <option value="email">Email</option>
-                  </select></label><label>Phone or email<input id="contactDestination" type="text" maxlength="120"
-                    placeholder="+12135550101" /></label>
+          <section class="panel sce-panel" aria-labelledby="sceTitle">
+            <div class="panelhead">
+              <div>
+                <div class="eyebrow">PUBLIC DATA / NO UTILITY ACCOUNT REQUIRED</div>
+                <h2 id="sceTitle">Real LA-area demand benchmarks.</h2>
+                <p class="small">
+                  SCE monthly residential ZIP averages, delivered through ORNL OpenEnergy Hub. Historical
+                  aggregates, not individual home readings.
+                </p>
               </div>
-              <label class="toggle"><input id="contactOptin" type="checkbox" /> Simulate resident opt-in to
-                reminders</label><button id="addNotifyContact">Add test subscriber</button>
-              <div id="notifyContacts" class="subscribers"></div>
             </div>
-            <div>
-              <h3>2 · Dispatcher readiness message</h3>
-              <div class="fields">
-                <label>Target home ZIP<input id="notifyZip" type="text" inputmode="numeric" maxlength="5"
-                    value="90002" /></label><label>Readiness level<select id="notifyLevel">
-                    <option value="prepare" selected>Prepare now</option>
-                    <option value="monitor">Monitor</option>
-                    <option value="urgent">Urgent review</option>
-                  </select></label>
+            <div class="padding">
+              <div class="inline">
+                <label style="flex: 1"
+                  >ZIP codes (up to six, separated by commas)<input
+                    id="sceZips"
+                    type="text"
+                    value="90002,90008,90022,90040,90045,90046" /></label
+                ><button id="loadSce" class="primary">Load SCE API ↻</button
+                ><button id="offlineData">Open saved SCE snapshot</button
+                ><button id="applySce" disabled>Apply ZIP scenarios →</button>
               </div>
-              <label>Expected shutoff start · your browser's local time<input id="notifyExpected"
-                  type="datetime-local" /></label><label>Timing evidence<select id="notifyEvidence">
-                  <option value="scenario">Scenario estimate · unconfirmed</option>
-                  <option value="notice">Simulated utility notice</option>
-                </select></label>
-              <p class="small">
-                Operator-selected readiness, not a computed outage probability. NWS warnings and SCE monthly
-                usage do not establish a PSPS schedule. Utilities control shutoffs; residents receive
-                preparation reminders.
+              <p id="sceStatus" class="small" role="status">
+                Not loaded. Load public records to populate the planner with ZIP usage scenarios.
               </p>
-              <p id="notifyAudience" class="small"></p>
-              <button id="reviewNotify" class="primary wide">Review preparation alert →</button>
-              <p id="notifyStatus" class="small" role="status">
-                No recipients or messages loaded. Add demo subscribers to try the flow.
+              <div id="sceRecords" class="sce-records"></div>
+              <p class="small">
+                Monthly kWh ÷ calendar days ÷ 24 gives an average kW benchmark. Hourly behavior, appliance
+                shares, battery charge and priorities remain assumptions. ZIPs may span utility territories;
+                these records describe SCE accounts only. A ZIP code does not establish feeder membership.
               </p>
             </div>
-            <div>
-              <h3>3 · Reminder timeline</h3>
-              <div id="notifyClock" class="readiness"></div>
-              <p class="small">
-                After review: alert now, preparation reminder one hour before, EV / manual-load reminder 15
-                minutes before. Reminders already in the past are omitted.
-              </p>
-              <button id="advanceNotify">Advance 30 min</button>
-              <button id="nextNotify">Jump to next reminder →</button>
-              <p id="notifyCounts" class="small" aria-live="polite"></p>
-              <div class="small">
-                This clock advances only when clicked. No reminders run after the page closes.
+          </section>
+          <div class="tools">
+            <details open="">
+              <summary>
+                Household measurements &amp; live weather <span id="sourceMini">No demand data loaded</span>
+              </summary>
+              <div class="toolgrid">
+                <section>
+                  <h3>Measured household profiles</h3>
+                  <p class="small">
+                    OPSD provides six historical German residential grid-import profiles. They are demand
+                    proxies, not LA measurements or battery telemetry.
+                  </p>
+                  <button id="loadData">Load six measured profiles</button>
+                  <button id="importButton">Import profile JSON</button>
+                  <button id="uploadCsv">Load downloaded OPSD CSV</button
+                  ><input id="rawCsvFile" type="file" accept=".csv,text/csv" hidden />
+                  <button id="loadSnapshot">Open saved demo</button
+                  ><input id="snapshotFile" type="file" accept=".json" hidden /><input
+                    id="importFile"
+                    type="file"
+                    accept=".json"
+                    hidden
+                  />
+                  <p id="source" class="small" role="status">
+                    No demand records loaded. Load SCE ZIP data or import measured household profiles.
+                  </p>
+                </section>
+                <section>
+                  <h3>National Weather Service</h3>
+                  <div class="inline">
+                    <label
+                      >Latitude<input
+                        id="lat"
+                        type="number"
+                        min="-90"
+                        max="90"
+                        step="any"
+                        value="34.0224" /></label
+                    ><label
+                      >Longitude<input
+                        id="lon"
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="any"
+                        value="-118.2851" /></label
+                    ><button id="weather">Load weather</button>
+                  </div>
+                  <div id="readiness" class="readiness">Weather not assessed</div>
+                  <p id="weatherStatus" class="small" role="status">
+                    Not loaded. Weather informs a review; it is not a confirmed shutoff.
+                  </p>
+                  <div id="alerts"></div>
+                </section>
               </div>
-              <button id="exportNotify" style="margin-top: 12px">Export demo outbox ↓</button>
-            </div>
-          </div>
-          <div class="padding">
-            <h3>Simulated delivery outbox</h3>
-            <div id="notifyOutbox" class="notify-outbox"></div>
+            </details>
           </div>
         </section>
-      </section>
-      <footer>
-        <span><i class="connection-dot"></i> POWERUP / INNOVATELA 2026</span><span>Historical ZIP inputs · scenario
-          batteries · geographic map · simulated dispatch</span>
-      </footer>
-    </main>
-  </div>
-  <dialog id="requestPreview">
-    <h2>Resident request preview</h2>
-    <p id="requestText"></p>
-    <p class="small">Demo preview only. No SMS is sent. A missing response is not consent.</p>
-    <button id="closeRequest">Close preview</button>
-  </dialog>
-  <dialog id="review">
-    <h2>Approve this simulated plan?</h2>
-    <p id="reviewText"></p>
-    <p class="small">
-      Approval stores a scenario plan only. It sends no battery commands. Unresolved homes remain visible.
-    </p>
-    <button id="confirm" class="primary">Approve simulated plan</button> <button id="cancel">Cancel</button>
-  </dialog>
-  <dialog id="notifyReview">
-    <h2>Review preparation alert</h2>
-    <p id="notifyReviewAudience"></p>
-    <pre id="notifyReviewBody" class="message-body"></pre>
-    <p class="small">
-      All delivery is simulated. This does not send an email, SMS, utility notice or device command.
-    </p>
-    <button id="confirmNotify" class="primary">Send to demo outbox</button>
-    <button id="cancelNotify">Cancel</button>
-  </dialog>
+        <section data-app-view="residents" class="app-view" hidden>
+          <div class="view-heading">
+            <div>
+              <div class="eyebrow">OUTREACH / PREPARATION WINDOW</div>
+              <h2>Get people ready, too.</h2>
+              <p>ZIP-targeted preparation alerts and reminders, with a simulated delivery timeline.</p>
+            </div>
+            <button data-view="operations">Back to operations ↗</button>
+          </div>
+          <section class="panel notify-panel" aria-labelledby="notifyTitle">
+            <div class="panelhead">
+              <div>
+                <div class="eyebrow">PREPARE THE PEOPLE / SIMULATED EMAIL &amp; SMS</div>
+                <h2 id="notifyTitle">A warning with time to act.</h2>
+                <p class="small">
+                  Target registered home ZIPs, not phone area codes. All messages and shutoff times in this
+                  panel are demo scenarios.
+                </p>
+              </div>
+              <button id="seedContacts">Load demo subscribers</button>
+            </div>
+            <div class="notify-grid padding">
+              <div>
+                <h3>1 · Resident enrollment</h3>
+                <p class="small">
+                  Try fictional contacts first. Contact details stay in this browser session; no provider
+                  receives them.
+                </p>
+                <div class="fields">
+                  <label
+                    >Name<input
+                      id="contactName"
+                      type="text"
+                      maxlength="60"
+                      placeholder="Test resident" /></label
+                  ><label
+                    >Home ZIP<input
+                      id="contactZip"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="5"
+                      value="90002" /></label
+                  ><label
+                    >Channel<select id="contactChannel">
+                      <option value="sms">SMS</option>
+                      <option value="email">Email</option>
+                    </select></label
+                  ><label
+                    >Phone or email<input
+                      id="contactDestination"
+                      type="text"
+                      maxlength="120"
+                      placeholder="+12135550101"
+                  /></label>
+                </div>
+                <label class="toggle"
+                  ><input id="contactOptin" type="checkbox" /> Simulate resident opt-in to reminders</label
+                ><button id="addNotifyContact">Add test subscriber</button>
+                <div id="notifyContacts" class="subscribers"></div>
+              </div>
+              <div>
+                <h3>2 · Dispatcher readiness message</h3>
+                <div class="fields">
+                  <label
+                    >Target home ZIP<input
+                      id="notifyZip"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="5"
+                      value="90002" /></label
+                  ><label
+                    >Readiness level<select id="notifyLevel">
+                      <option value="prepare" selected>Prepare now</option>
+                      <option value="monitor">Monitor</option>
+                      <option value="urgent">Urgent review</option>
+                    </select></label
+                  >
+                </div>
+                <label
+                  >Expected shutoff start · your browser's local time<input
+                    id="notifyExpected"
+                    type="datetime-local" /></label
+                ><label
+                  >Timing evidence<select id="notifyEvidence">
+                    <option value="scenario">Scenario estimate · unconfirmed</option>
+                    <option value="notice">Simulated utility notice</option>
+                  </select></label
+                >
+                <p class="small">
+                  Operator-selected readiness, not a computed outage probability. NWS warnings and SCE monthly
+                  usage do not establish a PSPS schedule. Utilities control shutoffs; residents receive
+                  preparation reminders.
+                </p>
+                <p id="notifyAudience" class="small"></p>
+                <button id="reviewNotify" class="primary wide">Review preparation alert →</button>
+                <p id="notifyStatus" class="small" role="status">
+                  No recipients or messages loaded. Add demo subscribers to try the flow.
+                </p>
+              </div>
+              <div>
+                <h3>3 · Reminder timeline</h3>
+                <div id="notifyClock" class="readiness"></div>
+                <p class="small">
+                  After review: alert now, preparation reminder one hour before, EV / manual-load reminder 15
+                  minutes before. Reminders already in the past are omitted.
+                </p>
+                <button id="advanceNotify">Advance 30 min</button>
+                <button id="nextNotify">Jump to next reminder →</button>
+                <p id="notifyCounts" class="small" aria-live="polite"></p>
+                <div class="small">
+                  This clock advances only when clicked. No reminders run after the page closes.
+                </div>
+                <button id="exportNotify" style="margin-top: 12px">Export demo outbox ↓</button>
+              </div>
+            </div>
+            <div class="padding">
+              <h3>Simulated delivery outbox</h3>
+              <div id="notifyOutbox" class="notify-outbox"></div>
+            </div>
+          </section>
+        </section>
+        <footer>
+          <span><i class="connection-dot"></i> POWERUP / INNOVATELA 2026</span
+          ><span>Historical ZIP inputs · scenario batteries · geographic map · simulated dispatch</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="requestPreview">
+      <h2>Resident request preview</h2>
+      <p id="requestText"></p>
+      <p class="small">Demo preview only. No SMS is sent. A missing response is not consent.</p>
+      <button id="closeRequest">Close preview</button>
+    </dialog>
+    <dialog id="review">
+      <h2>Approve this simulated plan?</h2>
+      <p id="reviewText"></p>
+      <p class="small">
+        Approval stores a scenario plan only. It sends no battery commands. Unresolved homes remain visible.
+      </p>
+      <button id="confirm" class="primary">Approve simulated plan</button> <button id="cancel">Cancel</button>
+    </dialog>
+    <dialog id="notifyReview">
+      <h2>Review preparation alert</h2>
+      <p id="notifyReviewAudience"></p>
+      <pre id="notifyReviewBody" class="message-body"></pre>
+      <p class="small">
+        All delivery is simulated. This does not send an email, SMS, utility notice or device command.
+      </p>
+      <button id="confirmNotify" class="primary">Send to demo outbox</button>
+      <button id="cancelNotify">Cancel</button>
+    </dialog>
 
-  <script src="static-api.js?v=17"></script>
-  <script src="scene.js?v=17"></script>
-  <script src="engine.js?v=17"></script>
-  <script src="advanced.js?v=17"></script>
-  <script src="demo-model.js?v=17"></script>
-  <script src="app.js?v=17"></script>
-  <script src="experience.js?v=17"></script>
-  <script src="sce.js?v=17"></script>
-  <script src="notifications.js?v=17"></script>
-  <script src="visual.js?v=17"></script>
-  <script src="demo.js?v=17"></script>
-  <script src="ui.js?v=16"></script>
-</body>
-
+    <script src="static-api.js?v=19"></script>
+    <script src="scene.js?v=19"></script>
+    <script src="engine.js?v=19"></script>
+    <script src="advanced.js?v=19"></script>
+    <script src="demo-model.js?v=19"></script>
+    <script src="app.js?v=19"></script>
+    <script src="experience.js?v=19"></script>
+    <script src="sce.js?v=19"></script>
+    <script src="notifications.js?v=19"></script>
+    <script src="visual.js?v=19"></script>
+    <script src="demo.js?v=19"></script>
+    <script src="ui.js?v=19"></script>
+  </body>
 </html>

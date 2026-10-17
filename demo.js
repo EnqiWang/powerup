@@ -1,24 +1,48 @@
-/* PoweruP demo layer: headline metrics bar, twist toggles, decision-trail export and the
-   one-click narrated "Run demo" timeline. Drives the existing app through its own functions;
-   all planning stays in engine.js / advanced.js. Nothing here sends real commands or messages. */
+/* PoweruP demo layer: headline metrics bar, region picker, twist toggles, Pilot & Funding tab,
+   decision-trail export and the one-click narrated "Run demo" replay (Bryson Fire by default).
+   Drives the existing app through its own functions; planning stays in engine.js / advanced.js.
+   Nothing here sends real commands or messages. */
 (function (root) {
   "use strict";
   const M = root.PowerupDemoModel,
     V = root.PowerupVisual;
-  let C = null,
+  let C = null, // data/twists.json
+    R = {}, // config/regions/*.json by id
+    region = null,
+    scenario = null,
+    snaps = null,
+    funding = null,
     active = [],
     twistBase = null,
     trail = [],
     frozen = null;
   const demo = { i: -1, playing: false, t: 0, last: 0, timer: null, done: {} };
+  const steps = () => scenario?.demo || [];
 
-  // ---------- shared helpers ----------
+  // ---------- helpers ----------
   const el = (tag, attrs = {}, html = "") => Object.assign(document.createElement(tag), attrs, { innerHTML: html });
+  const getJSON = (u) =>
+    fetch(u).then((r) => {
+      if (!r.ok) throw Error(u + " HTTP " + r.status);
+      return r.json();
+    });
+  const synthetic = () => region?.provenance === "SYNTHETIC";
+  const badge = (p) => `<i class="prov ${String(p).toLowerCase().split(/[ ;]/)[0]}">${safe(p)}</i>`;
   function download(name, data) {
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })),
       a = el("a", { href: url, download: name });
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function money(x) {
+    const cur = region?.currency || { symbol: "$" };
+    return cur.symbol + (Number.isFinite(x) ? x.toFixed(cur.code === "JPY" ? 0 : 2) : "—");
+  }
+  function when(e) {
+    if (!e?.at) return e?.when || "";
+    const o = { month: "short", day: "numeric", timeZone: "America/Los_Angeles" };
+    if (!e.dateOnly) Object.assign(o, { hour: "numeric", minute: "2-digit" });
+    return new Date(e.at).toLocaleString("en-US", o);
   }
   function shieldValues() {
     return { feederCapacity: +$("feederCapacity").value, reliefHours: +$("reliefHours").value };
@@ -34,44 +58,95 @@
   function snapshotState() {
     return P.clone({ homes, cfg, shield: shieldValues(), criticalLoads: C.criticalLoads });
   }
-  function safeHeadline(hs, c, pl) {
+  function metrics(hs = homes, c = cfg, pl = plan) {
     try {
-      return hs.length ? M.headline(hs, c, prices, pl) : null;
+      return hs.length ? M.headline(hs, c, prices, pl, { medicalLabel: region?.medicalLabel, currency: region?.currency }) : null;
     } catch (e) {
       return null;
     }
+  }
+
+  // ---------- regions (config only; the engine is unchanged) ----------
+  function loadRegion(id) {
+    region = R[id];
+    scenario = region.scenarioData;
+    outage = null;
+    approved = false;
+    active = [];
+    twistBase = null;
+    trail = [];
+    homes = M.acceptConsent(
+      M.buildFleet(scenario, snaps).map((h) => decorate(h)),
+      scenario.cfg.duration,
+    );
+    selected = homes[0].id;
+    cfg = { ...scenario.cfg };
+    prices = M.enginePrices(scenario.prices, region.currency);
+    for (const k of ["buy", "sell", "eventHours", "dailyReserve"]) $(k).value = prices[k];
+    writeInputs({ cfg, shield: C.baseCase.shield, criticalLoads: P.clone(region.criticalLoads) });
+    source = {
+      kind: scenario.zip ? "zip-benchmark" : "synthetic-region",
+      source: scenario.zip ? scenario.usage?.source : "SYNTHETIC region config",
+      location: region.name,
+      method: scenario.fleet.note || "SYNTHETIC per-site loads from config/regions/" + id + ".json",
+      region: id,
+    };
+    $("source").textContent = scenario.zip
+      ? `${homes.length} representative Base Core homes, one per de-energized circuit, sized from real SCE ZIP ${scenario.zip} usage. Battery state, Medical Baseline enrollment and consent are assumptions.`
+      : `${region.name}: SYNTHETIC sites and loads from config. Same engine; no real data claimed.`;
+    $("sourceMini").textContent = `${homes.length} ${region.siteLabel || "home"}s · ${region.name}`;
+    $("dataBadge").textContent = synthetic()
+      ? "SYNTHETIC REGION · SAME ENGINE"
+      : `REAL ZIP ${scenario.zip} USAGE · SIMULATED BATTERIES`;
+    document.body.classList.toggle("region-synthetic", synthetic());
+    changed(`Region: ${region.name} (${region.provenance}). Scenario: ${scenario.title}.`);
+    renderRegionPicker();
+    renderTwists();
+    renderFunding();
+  }
+  function renderRegionPicker() {
+    const box = $("regionPicker");
+    if (!box || !region) return;
+    box.innerHTML =
+      `<label>REGION <select id="regionSelect">${Object.values(R)
+        .map((r) => `<option value="${r.id}" ${r.id === region.id ? "selected" : ""}>${safe(r.name)}</option>`)
+        .join("")}</select></label>${badge(region.provenance)}` +
+      `<span class="small region-note" title="${safe(region.provenanceNote)}">${safe(region.hazardFeed.name)} · ${safe(region.shutoffRules.name)} · ${safe(region.currency.code)} · ${safe(region.units.temperature)}</span>`;
+    $("regionSelect").onchange = (e) => {
+      stop(false);
+      loadRegion(e.target.value);
+    };
   }
 
   // ---------- headline metrics bar (always visible) ----------
   function renderHeadline() {
     const bar = $("headline");
     if (!bar) return;
-    let m = safeHeadline(homes, cfg, plan);
+    let m = metrics();
     const f = (x, d = 0) => (Number.isFinite(x) ? x.toFixed(d) : "—");
-    // During an outage the planning numbers freeze at outage start; "kept powered" goes live and counts
-    // only verified (talking) batteries that have not run short.
+    if (!m) {
+      bar.innerHTML =
+        '<div class="hl-empty">Metrics appear once a fleet is loaded. Press <b>▶ Run demo</b> for the 3-minute Bryson Fire replay.</div>';
+      return;
+    }
+    // During an outage planning numbers freeze at outage start; "kept on" goes live and counts only
+    // verified (talking) batteries that have not run short.
     if (!outage) frozen = null;
-    else if (m) {
+    else {
       frozen = frozen || m;
       const silent = homes.filter((h) => !P.classifySilent(h, homes).verified).length,
         live = homes.filter(
           (h) => P.classifySilent(h, homes).verified && outage.devices.find((d) => d.id === h.id).unservedKwh < 1e-6,
         ).length;
       m = frozen.map((x) =>
-        x.id === "kept"
-          ? { ...x, value: live, detail: `verified at hour ${f(outage.elapsed)} · ${silent} silent` }
-          : x,
+        x.id === "kept" ? { ...x, value: live, detail: `verified at hour ${f(outage.elapsed)} · ${silent} silent` } : x,
       );
-    }
-    if (!m) {
-      bar.innerHTML =
-        '<div class="hl-empty">Headline metrics appear once a fleet is loaded. Press <b>▶ Run demo</b> for the 3-minute story.</div>';
-      return;
     }
     bar.innerHTML = m
       .map((x) => {
-        const value = x.id === "value" ? "$" + f(x.value, 2) : f(x.value, x.id === "headroom" ? 1 : 0);
-        return `<div class="hl" title="${safe(x.sources)}"><span class="hl-label">${safe(x.label)} <i class="prov ${x.provenance.toLowerCase()}">${x.provenance}</i></span><strong>${value}<small> ${safe(x.unit)}</small></strong><span class="hl-detail">${safe(x.detail)}</span></div>`;
+        const value = x.id === "value" ? money(x.value) : f(x.value, x.id === "headroom" ? 1 : 0),
+          prov = synthetic() ? "SYNTHETIC" : x.provenance;
+        return `<div class="hl" title="${safe(x.sources)}"><span class="hl-label">${safe(x.label)} ${badge(prov)}</span><strong>${value}<small> ${safe(x.unit)}</small></strong><span class="hl-detail">${safe(x.detail)}</span></div>`;
       })
       .join("");
   }
@@ -80,14 +155,14 @@
   function renderTwists() {
     const box = $("twistBar");
     if (!box || !C) return;
-    const alerts = (root.weatherSnapshot || weatherSnapshot)?.alerts || [];
+    const alerts = (weatherSnapshot || snaps?.nws)?.alerts || [];
     box.innerHTML =
       '<span class="twist-title">TWISTS <i class="prov assumed">ASSUMED</i></span>' +
       C.twists
         .map((t) => {
           const on = active.includes(t.id),
-            ev = t.evidenceAlert && alerts.find((a) => a.event === t.evidenceAlert);
-          return `<label class="twist ${on ? "on" : ""}" title="${safe(t.summary)}"><input type="checkbox" data-twist="${t.id}" ${on ? "checked" : ""}> ${safe(t.name)}${ev ? ' <i class="prov real" title="Bundled/loaded NWS response">NWS: ' + safe(ev.event) + "</i>" : ""}${on ? `<button class="trail" data-trail="${t.id}" title="Export decision trail for this twist">⇩ trail</button>` : ""}</label>`;
+            ev = !synthetic() && t.evidenceAlert && alerts.find((a) => a.event === t.evidenceAlert);
+          return `<label class="twist ${on ? "on" : ""}" title="${safe(t.summary)}"><input type="checkbox" data-twist="${t.id}" ${on ? "checked" : ""}> ${safe(t.name)}${ev ? ' <i class="prov real" title="Bundled NWS response">NWS: ' + safe(ev.event) + "</i>" : ""}${on ? `<button class="trail" data-trail="${t.id}" title="Export decision trail for this twist">⇩ trail</button>` : ""}</label>`;
         })
         .join("");
     box.querySelectorAll("[data-twist]").forEach((x) => (x.onchange = () => toggleTwist(x.dataset.twist, x.checked)));
@@ -101,7 +176,7 @@
   }
   function toggleTwist(id, on) {
     if (!homes.length) {
-      $("banner").textContent = "Load a fleet first (Run demo or Use saved SCE usage), then apply twists.";
+      $("banner").textContent = "Load a fleet first (Run demo or pick a region), then apply twists.";
       renderTwists();
       return;
     }
@@ -118,54 +193,63 @@
     renderTwists();
   }
   function decisions() {
-    const relief = (() => {
-      try {
-        return P.relief(
-          homes.map((h) => ({ ...h, energy: projectedEnergy(h) })),
-          cfg,
-          shieldInputs(),
-        );
-      } catch (e) {
-        return { error: e.message };
-      }
-    })();
+    let relief;
+    try {
+      relief = P.relief(
+        homes.map((h) => ({ ...h, energy: projectedEnergy(h) })),
+        cfg,
+        shieldInputs(),
+      );
+    } catch (e) {
+      relief = { error: e.message };
+    }
     return {
       homes: homes.map((h) => {
         const b = viewBudget(h);
         return {
           id: h.id,
           name: h.name,
+          medicalBaseline: !!h.medicalBaseline,
           classification: P.classifySilent(h, homes),
-          budget: { budgetKw: b.budgetKw, plannedKw: b.plannedKw, runtimeH: b.runtime, targetMet: b.targetMet, shortfallKwh: b.shortfallKwh },
+          budget: {
+            budgetKw: b.budgetKw,
+            plannedKw: b.plannedKw,
+            runtimeH: b.runtime,
+            targetMet: b.targetMet,
+            shortfallKwh: b.shortfallKwh,
+          },
         };
       }),
       relief,
       handoff: handoffItems(),
     };
   }
+  function trailDoc(twist) {
+    return {
+      schema: "powerup.decision-trail.v1",
+      simulation: true,
+      exportedAt: new Date().toISOString(),
+      region: region && { id: region.id, name: region.name, provenance: region.provenance },
+      scenario: scenario && { id: scenario.id, title: scenario.title, provenance: scenario.provenance },
+      twist,
+      activeTwists: active,
+      demoMode: !!root.POWERUP_DEMO,
+      battery: C.battery,
+      inputs: { cfg, prices, shield: shieldValues(), criticalLoads: C.criticalLoads },
+      effectsApplied: trail,
+      metrics: metrics(),
+      decisions: decisions(),
+      approved,
+      events,
+    };
+  }
   function exportTrail(id) {
     const t = C.twists.find((t) => t.id === id);
     let before = null;
     try {
-      before = twistBase && M.headline(twistBase.homes, twistBase.cfg, prices, P.prepare(twistBase.homes, twistBase.cfg));
+      before = twistBase && metrics(twistBase.homes, twistBase.cfg, P.prepare(twistBase.homes, twistBase.cfg));
     } catch (e) {}
-    download(`PoweruP-trail-${id}.json`, {
-      schema: "powerup.decision-trail.v1",
-      simulation: true,
-      exportedAt: new Date().toISOString(),
-      twist: t,
-      activeTwists: active,
-      demoMode: !!root.POWERUP_DEMO,
-      dataSource: source && { kind: source.kind, source: source.source, location: source.location },
-      battery: C.battery,
-      inputs: { cfg, prices, shield: shieldValues(), criticalLoads: C.criticalLoads },
-      effectsApplied: trail,
-      metricsBefore: before,
-      metricsAfter: safeHeadline(homes, cfg, plan),
-      decisions: decisions(),
-      approved,
-      events,
-    });
+    download(`PoweruP-trail-${id}.json`, { ...trailDoc(t), metricsBefore: before });
     log(`Decision trail exported for twist “${t.name}”.`);
   }
 
@@ -184,32 +268,96 @@
         items.push({
           kind: "Critical load",
           who: n.name,
-          detail: `${n.kw} kW, ${n.graceHours} h grace. Needs utility or mobile generation; home batteries cannot feed it through a de-energized feeder.`,
+          detail: `${n.kw} kW, ${n.graceHours} h grace. Needs utility or mobile generation; home batteries cannot feed it through a de-energized circuit.`,
         });
     return items;
   }
 
-  // ---------- figures shown above the caption bar ----------
+  // ---------- figures (card above the caption bar) ----------
   function figure(html) {
     const f = $("demoFigure");
     f.innerHTML = html || "";
     f.hidden = !html;
   }
-  function headroomFigure() {
+  function lineChart(series, lead, limit, title, legend) {
+    const top = Math.max(limit * 1.2, ...series.flatMap((s) => s.pts.map((p) => p.total)), 1),
+      W = 420,
+      H = 120,
+      line = (pts) =>
+        pts.map((p, i) => `${i ? "L" : "M"}${((p.hour / lead) * W).toFixed(1)},${(H - (p.total / top) * H).toFixed(1)}`).join(""),
+      y = H - (limit / top) * H;
+    return `<div class="fig-title">${title}</div>
+      <svg viewBox="-2 -6 ${W + 4} ${H + 22}" class="fig-chart" role="img" aria-label="${safe(title)}">
+        <line x1="0" x2="${W}" y1="${y}" y2="${y}" class="fig-limit"/><text x="${W}" y="${y - 4}" text-anchor="end" class="fig-limit-t">spare capacity ${fmt(limit)} kW</text>
+        ${series.map((s) => `<path d="${line(s.pts)}" class="${s.cls}"/>`).join("")}
+        <text x="0" y="${H + 14}" class="fig-axis">start</text><text x="${W}" y="${H + 14}" text-anchor="end" class="fig-axis">+${lead} h</text></svg>
+      <div class="fig-legend">${legend}</div>`;
+  }
+  function fillFigure() {
     const rush = M.unmanagedCurve(homes, cfg),
       stag = plan?.trace || [],
-      top = Math.max(cfg.headroom * 1.2, ...rush.map((x) => x.total), 1),
-      W = 420,
-      H = 130,
-      line = (pts) =>
-        pts.map((p, i) => `${i ? "L" : "M"}${((p.hour / cfg.lead) * W).toFixed(1)},${(H - (p.total / top) * H).toFixed(1)}`).join(""),
-      y = H - (cfg.headroom / top) * H;
-    return `<div class="fig-title">Shared feeder headroom · ${cfg.lead} h before shutoff <i class="prov assumed">ASSUMED</i></div>
-      <svg viewBox="-2 -6 ${W + 4} ${H + 22}" class="fig-chart" role="img" aria-label="Charging demand: everyone at 4 PM versus staggered">
-        <line x1="0" x2="${W}" y1="${y}" y2="${y}" class="fig-limit"/><text x="${W}" y="${y - 4}" text-anchor="end" class="fig-limit-t">feeder headroom ${cfg.headroom} kW</text>
-        <path d="${line(rush)}" class="fig-rush"/><path d="${line(stag)}" class="fig-stag"/>
-        <text x="0" y="${H + 14}" class="fig-axis">4 PM</text><text x="${W}" y="${H + 14}" text-anchor="end" class="fig-axis">+${cfg.lead} h</text></svg>
-      <div class="fig-legend"><span class="k rush"></span>Everyone charges at 4 PM · peak ${fmt(Math.max(...rush.map((x) => x.total)))} kW <span class="k stag"></span>PoweruP staggered · peak ${fmt(Math.max(0, ...stag.map((x) => x.total)))} kW</div>`;
+      first = homes
+        .map((h) => ({ h, at: stag.find((s) => (s.allocations[h.id] || 0) > 0)?.hour }))
+        .filter((x) => x.at != null)
+        .sort((a, b) => a.at - b.at)
+        .map((x) => `<li>${x.h.medicalBaseline ? "<b>Medical Baseline</b> · " : ""}${safe(x.h.name)} <span class="small">starts +${fmt(x.at)} h</span></li>`)
+        .join("");
+    return (
+      lineChart(
+        [
+          { pts: rush, cls: "fig-rush" },
+          { pts: stag, cls: "fig-stag" },
+        ],
+        cfg.lead,
+        cfg.headroom,
+        `FILL · ${cfg.lead} h before shutoff ${badge("INFERRED")} ${badge("ASSUMED")}`,
+        `<span class="k rush"></span>Everyone charges at once · ${fmt(Math.max(0, ...rush.map((x) => x.total)))} kW <span class="k stag"></span>Staggered · ${fmt(Math.max(0, ...stag.map((x) => x.total)))} kW`,
+      ) + `<div class="small">Charging order (export paused):</div><ol class="fig-list">${first}</ol>`
+    );
+  }
+  function eventCard(id) {
+    const e = scenario.events.find((x) => x.id === id);
+    if (!e) return "";
+    return `<div class="fig-event"><span class="small">${safe(when(e))} · ${safe(e.source)}</span> ${badge(e.provenance)}<div>${safe(e.label)}</div>${
+      e.grace ? `<div class="grace"><b>Grace ${safe(e.grace.phase)}</b> ${badge("INFERRED")} ${safe(e.grace.action)}</div>` : ""
+    }</div>`;
+  }
+  function watchFigure() {
+    const talking = homes.filter((h) => P.classifySilent(h, homes).verified).length,
+      circuits = scenario.circuits || [],
+      total = circuits.reduce((s, c) => s + (c.customers || 0), 0),
+      alerts = (snaps?.nws?.alerts || []).map((a) => safe(a.event)).join(", ");
+    return (
+      eventCard(steps()[demo.i]?.event) +
+      (circuits.length
+        ? `<table class="fig-table">${circuits
+            .map(
+              (c) =>
+                `<tr><td><b>${safe(c.name)}</b></td><td>${c.customers ? c.customers.toLocaleString() + " customers" : "no record"}</td><td><span class="cat tripped">HIGH RISK</span></td></tr>`,
+            )
+            .join("")}<tr><td colspan="3" class="small">≈${total.toLocaleString()} customers on circuits with a public count ${badge("REAL")}</td></tr></table>`
+        : `<div class="small">Hazard feed: ${safe(region.hazardFeed.name)} · levels ${safe(region.hazardFeed.levels.join(" → "))} ${badge("SYNTHETIC")}</div>`) +
+      `<div class="fig-stat"><b>${talking}/${homes.length}</b> batteries reporting in</div>` +
+      (!synthetic() && alerts ? `<div class="small">Bundled NWS snapshot today: ${alerts} ${badge("REAL")}</div>` : "")
+    );
+  }
+  function askFigure() {
+    const mb = homes.filter((h) => h.medicalBaseline);
+    return (
+      eventCard(steps()[demo.i]?.event) +
+      `<div class="fig-title">Consent requests (simulated, nothing sent)</div><table class="fig-table">${mb
+        .map((h) => `<tr><td>${safe(h.name)}</td><td><b>${safe(region.medicalLabel.split(" ")[0])}</b></td><td>Hold battery at 100% · consented ${badge("ASSUMED")}</td></tr>`)
+        .join("")}</table>`
+    );
+  }
+  function holdFigure() {
+    const rows = homes
+      .map((h) => {
+        const b = viewBudget(h);
+        return `<tr><td>${h.medicalBaseline ? "<b>MB</b> " : ""}${safe(h.name)}</td><td>${fmt(b.plannedKw)} kW budget</td><td>${b.runtime == null ? "—" : fmt(Math.min(b.runtime, 999))} h left</td></tr>`;
+      })
+      .join("");
+    return eventCard(steps()[demo.i]?.event) + `<div class="fig-title">Hours budget per home${outage ? " · hour " + fmt(outage.elapsed) : ""}</div><table class="fig-table">${rows}</table>`;
   }
   function silentFigure() {
     const rows = homes
@@ -220,47 +368,57 @@
           `<tr><td>${safe(h.name)}</td><td><span class="cat ${c.category}">${safe(c.label)}</span></td><td class="small">${safe(c.localPlan)}</td></tr>`,
       )
       .join("");
-    return `<div class="fig-title">Silent-battery classifier <i class="prov assumed">SCENARIO EVIDENCE</i></div><table class="fig-table">${rows || "<tr><td>All batteries reporting.</td></tr>"}</table>`;
+    return (
+      eventCard("network-loss") +
+      `<div class="fig-title">Silent-battery classifier ${badge("ASSUMED")}</div><table class="fig-table">${rows || "<tr><td>All batteries reporting.</td></tr>"}</table>` +
+      eventCard("sce-69746")
+    );
   }
-  function handoffFigure() {
-    const items = handoffItems();
-    return `<div class="fig-title">Operator handoff · ${items.length} items</div><table class="fig-table">${items
-      .map((x) => `<tr><td><b>${safe(x.kind)}</b></td><td>${safe(x.who)}</td><td class="small">${safe(x.detail)}</td></tr>`)
-      .join("")}</table><button id="handoffExport" class="primary">⇩ Export decision trail</button>`;
+  function handoffFigure(rc) {
+    const items = handoffItems(),
+      shift = (pts) => pts.map((p) => ({ hour: p.hour, total: p.total + rc.loadKw }));
+    return (
+      eventCard(steps()[demo.i]?.event) +
+      lineChart(
+        [
+          { pts: shift(rc.surge), cls: "fig-rush" },
+          { pts: shift(rc.trace), cls: "fig-stag" },
+        ],
+        rc.lead,
+        rc.loadKw + rc.headroom,
+        `Restoration recharge proposal ${badge("INFERRED")}`,
+        `<span class="k rush"></span>Cold-start surge ${fmt(rc.surgeKw)} kW <span class="k stag"></span>Staggered ${fmt(rc.staggeredKw)} kW`,
+      ) +
+      `<div class="fig-proposal">Proposed to the utility shutoff officer: staggered recharge over ${rc.lead} h. <b>Awaiting human approval</b> (simulated).</div>` +
+      `<div class="fig-title">Operator handoff · ${items.length} items</div><table class="fig-table">${items
+        .map((x) => `<tr><td><b>${safe(x.kind)}</b></td><td>${safe(x.who)}</td><td class="small">${safe(x.detail)}</td></tr>`)
+        .join("")}</table><button id="handoffExport" class="primary">⇩ Export decision trail</button>`
+    );
   }
-  function weatherFigure() {
-    const w = weatherSnapshot,
-      list = (w?.alerts || []).map((a) => `<li><b>${safe(a.event)}</b> · ${safe(a.headline || "")}</li>`).join("");
-    return `<div class="fig-title">National Weather Service ${w?.snapshot ? "snapshot" : "response"} <i class="prov real">REAL</i></div>
-      <div class="small">${safe(w?.location || "LA point")} · fetched ${w ? new Date(w.fetchedAt).toLocaleString() : "—"}</div>
-      <ul class="fig-list">${list || "<li>No active alerts in this response.</li>"}</ul>
-      <div class="small">Fire-weather shutoff warning in this story: <i class="prov assumed">SCENARIO</i> — not claimed from NWS.</div>`;
+  function tuesdayFigure() {
+    const m = metrics(),
+      v = m?.find((x) => x.id === "value");
+    return `<div class="fig-title">Customer 1 · ${synthetic() ? "local utility" : "SCE"} peak relief</div><div class="fig-stat"><b>${money(v?.value)}</b> per 2 h peak event for this ${homes.length}-${safe(region.siteLabel || "home")} fleet ${badge(synthetic() ? "SYNTHETIC" : "ASSUMED")}</div><div class="small">Only energy above each protected reserve is sold. Customer 2, the utility demand-response dispatcher, uses the same fleet in the Neighborhood shield view.</div>`;
+  }
+
+  // ---------- timeline strip ----------
+  function renderStrip() {
+    const box = $("timeline");
+    if (!box || !scenario) return;
+    const cur = steps()[demo.i]?.event,
+      idx = scenario.events.findIndex((e) => e.id === cur);
+    box.innerHTML =
+      `<div class="tl-pitch">${safe(scenario.pitch)} ${badge(scenario.provenance)}</div><ol class="tl">` +
+      scenario.events
+        .map(
+          (e, i) =>
+            `<li class="${i === idx ? "now" : i < idx ? "done" : ""}" title="${safe(e.label)} · ${safe(e.source)}"><span class="tl-when">${safe(when(e))}</span>${e.grace ? `<span class="tl-phase">${safe(e.grace.phase)}</span>` : ""}</li>`,
+        )
+        .join("") +
+      "</ol>";
   }
 
   // ---------- demo timeline ----------
-  function setupFleet() {
-    outage = null;
-    active = [];
-    twistBase = null;
-    trail = [];
-    V.offline(); // fresh six-ZIP fleet from the saved SCE snapshot (no network)
-    const b = C.baseCase;
-    Object.assign(cfg, b.cfg);
-    Object.assign(prices, b.prices);
-    for (const k of Object.keys(b.prices)) $(k).value = b.prices[k];
-    writeInputs({ cfg, shield: b.shield, criticalLoads: P.clone(C.originalCriticalLoads) });
-    homes.forEach((h) => {
-      h.gridParticipation = b.residentsOptIn;
-      h.loads.forEach((l) => {
-        if (l.id === "essential") return;
-        l.consent = "accepted";
-        l.consentHours = cfg.duration;
-        l.gridAccepted = true;
-      });
-    });
-    changed("Demo fleet: six LA ZIP homes, residents enrolled (scenario consent), 72 h planning horizon.");
-    renderTwists();
-  }
   function setMode(m) {
     mode = m;
     render();
@@ -275,147 +433,136 @@
   function ensureOutage(hour) {
     ensureApproved();
     if (!outage) $("startOutage").onclick();
-    if (outage.elapsed < hour) advance(hour - outage.elapsed);
+    if (outage.elapsed < hour) advance(Math.min(hour, outage.duration) - outage.elapsed);
+  }
+  function silenceBatteries() {
+    for (const x of C.demoSilent) {
+      const h = homes.find((h) => h.id === x.home);
+      if (h && h.online) {
+        h.online = false;
+        h.evidence = { ...h.evidence, ...x.evidence };
+      }
+    }
   }
   const STEPS = {
     tuesday: {
       enter() {
-        setupFleet();
+        loadRegion(region.id);
         V.view("operations");
         setMode("everyday");
-        figure("");
+        figure(tuesdayFigure());
       },
     },
-    dispatcher: {
+    watch: {
       enter() {
         V.view("operations");
-        setMode("shield");
-        figure("");
+        setMode("prepare");
+        figure(watchFigure());
       },
     },
-    fire: {
+    ask: {
       enter() {
-        fetch("/api/weather?lat=34.025&lon=-118.3")
-          .then((r) => (r.ok ? r.json() : null))
-          .then((w) => {
-            if (w) weatherSnapshot = w;
-            if (demo.i >= 0 && order()[demo.i] === "fire") figure(weatherFigure());
-            renderTwists();
-          })
-          .catch(() => {});
-        V.view("residents");
-        $("seedContacts").click();
-        $("notifyLevel").value = "prepare";
-        $("reviewNotify").click();
-        figure(weatherFigure());
+        if (scenario.zip) {
+          V.view("residents");
+          $("sceZips").value = scenario.zip;
+          $("seedContacts").click();
+          $("notifyLevel").value = "prepare";
+          $("reviewNotify").click();
+        }
+        figure(askFigure());
       },
       tick(t) {
-        if (t >= 4 && !demo.done.alert && $("notifyReview").open) {
-          demo.done.alert = true;
-          $("confirmNotify").click();
-        }
+        if (t >= 3 && $("notifyReview").open) $("confirmNotify").click();
       },
       leave() {
         if ($("notifyReview").open) $("confirmNotify").click();
       },
     },
-    prepare: {
+    fill: {
       enter() {
         V.view("operations");
+        homes.forEach((h) => Object.assign(h, { gridParticipation: false, exportPaused: true })); // export paused while filling
         mode = "prepare";
         build();
-        figure(headroomFigure());
+        log("FILL: export paused; staggered charging inside spare circuit capacity, medical-priority homes first.");
+        figure(fillFigure());
       },
     },
-    approve: {
+    hold: {
       enter() {
+        V.view("operations");
         ensurePlan();
         $("approve").onclick();
-        figure("");
+        mode = "outage";
+        figure(holdFigure());
       },
       tick(t) {
-        if (t >= 5 && $("review").open) $("confirm").onclick();
+        if (t >= 3 && $("review").open) $("confirm").onclick();
+        if (t >= 4 && !outage) {
+          ensureApproved();
+          $("startOutage").onclick();
+        }
+        // 5 PM onward: one simulated hour every 2 seconds, up to 10 PM.
+        if (outage && outage.elapsed < 5 && t >= 4 + 2 * (outage.elapsed + 1)) {
+          advance(1);
+          figure(holdFigure());
+        }
       },
       leave() {
-        if (!approved) $("confirm").onclick();
-      },
-    },
-    outage: {
-      enter() {
-        ensureApproved();
-        mode = "outage";
-        if (!outage) $("startOutage").onclick();
-        figure("");
-      },
-      tick(t) {
-        // 6 PM → 3 AM: one simulated hour every 2 seconds.
-        if (outage && outage.elapsed < 9 && t >= 2 * (outage.elapsed + 1)) advance(1);
+        if ($("review").open) $("confirm").onclick();
       },
     },
     silent: {
       enter() {
+        V.view("operations");
         mode = "outage";
-        ensureOutage(9);
-        for (const x of C.demoSilent) {
-          const h = homes.find((h) => h.id === x.home);
-          if (h) {
-            h.online = false;
-            h.evidence = { ...h.evidence, ...x.evidence };
-          }
-        }
-        log("3 AM: four batteries stopped reporting. Devices continue their local plan; capacity marked unverified.");
+        ensureOutage(10); // 5 PM + 10 h = 3 AM
+        silenceBatteries();
+        log("3 AM: four batteries stopped reporting. Each keeps its local rule; capacity marked unverified.");
         render();
         figure(silentFigure());
       },
       tick(t) {
-        // Remaining outage hours (3 AM → hour 72) run in 9-hour jumps while the classifier is on screen.
-        if (outage && outage.elapsed < outage.duration && t >= (demo.done.nextAt ?? 3)) {
-          advance(9);
+        if (outage && outage.elapsed < 14 && t >= (demo.done.nextAt ?? 4)) {
+          advance(2); // toward 7 AM
           demo.done.nextAt = t + 2.5;
         }
       },
     },
     handoff: {
       enter() {
+        V.view("operations");
         mode = "outage";
         ensureOutage(cfg.duration);
+        silenceBatteries();
         render();
-        log(`Operator handoff: ${handoffItems().length} items the fleet cannot cover.`);
-        figure(handoffFigure());
-        $("handoffExport").onclick = () =>
-          download("PoweruP-trail-demo.json", {
-            schema: "powerup.decision-trail.v1",
-            simulation: true,
-            exportedAt: new Date().toISOString(),
-            twist: { id: "demo", name: "Run demo timeline" },
-            battery: C.battery,
-            inputs: { cfg, prices, shield: shieldValues(), criticalLoads: C.criticalLoads },
-            metrics: safeHeadline(homes, cfg, plan),
-            decisions: decisions(),
-            events,
-          });
+        const energies = Object.fromEntries(outage.devices.map((d) => [d.id, d.energy])),
+          rc = M.recharge(homes, energies, cfg, scenario.recharge || { lead: 8, headroom: cfg.headroom });
+        log(`HAND OFF: staggered recharge proposed (${fmt(rc.surgeKw)} → ${fmt(rc.staggeredKw)} kW peak); ${handoffItems().length} items to the operator.`);
+        figure(handoffFigure(rc));
+        $("handoffExport").onclick = () => download("PoweruP-trail-" + scenario.id + ".json", { ...trailDoc({ id: "demo", name: "Run demo replay" }), recharge: rc });
       },
     },
   };
-  const order = () => C.demoScript.map((s) => s.id);
   function caption() {
-    const s = C.demoScript[demo.i],
-      bar = $("captionBar");
-    bar.hidden = false;
-    $("capStep").textContent = `${demo.i + 1} / ${C.demoScript.length}`;
+    const s = steps()[demo.i];
+    $("captionBar").hidden = false;
+    $("capStep").textContent = `${demo.i + 1} / ${steps().length}`;
     $("capTitle").textContent = s.title;
     $("capText").textContent = s.caption;
     $("capPause").textContent = demo.playing ? "❚❚ Pause" : "▶ Play";
-    $("capNext").textContent = demo.i === C.demoScript.length - 1 ? "Finish" : "Next →";
+    $("capNext").textContent = demo.i === steps().length - 1 ? "Finish" : "Next →";
+    renderStrip();
   }
   function go(i) {
-    const prev = C.demoScript[demo.i];
+    const prev = steps()[demo.i];
     if (prev) STEPS[prev.id]?.leave?.();
-    if (i >= C.demoScript.length) return stop(true);
+    if (i >= steps().length) return stop(true);
     demo.i = i;
     demo.t = 0;
+    demo.done = {};
     try {
-      STEPS[C.demoScript[i].id].enter();
+      STEPS[steps()[i].id].enter();
     } catch (e) {
       log("Demo step error: " + e.message);
     }
@@ -423,11 +570,10 @@
   }
   function tick() {
     if (!demo.playing || demo.i < 0) return;
-    const now = performance.now(),
-      dt = (now - demo.last) / 1000;
+    const now = performance.now();
+    demo.t += (now - demo.last) / 1000;
     demo.last = now;
-    demo.t += dt;
-    const s = C.demoScript[demo.i];
+    const s = steps()[demo.i];
     try {
       STEPS[s.id].tick?.(demo.t);
     } catch (e) {
@@ -437,8 +583,7 @@
     if (demo.t >= s.seconds) go(demo.i + 1);
   }
   function start() {
-    if (!C) return ready.then(() => C && start());
-    demo.done = {};
+    if (!C || !region) return ready.then(() => C && region && start());
     demo.playing = true;
     demo.last = performance.now();
     clearInterval(demo.timer);
@@ -456,23 +601,78 @@
     demo.i = -1;
     $("captionBar").hidden = true;
     if (!finished) figure("");
-    else log("Demo finished. Explore any panel, toggle a twist, or export the decision trail.");
+    else log("Demo finished. Switch region, toggle a twist, open Pilot & Funding, or export the decision trail.");
+  }
+
+  // ---------- Pilot & Funding tab ----------
+  function renderFunding() {
+    const box = $("fundingBody");
+    if (!box || !funding) return;
+    const m = metrics(),
+      by = Object.fromEntries((m || []).map((x) => [x.id, x])),
+      n = homes.length || 1,
+      line = (id, N) => {
+        const x = by[id];
+        if (!x) return "—";
+        if (id === "kept") return `≈${Math.round((x.value / n) * N).toLocaleString()} of ${N.toLocaleString()} homes kept on through ${cfg.duration} h`;
+        if (id === "backup") return `${fmt(x.value)} h backup per home vs ${fmt(x.baseline)} h without a plan`;
+        if (id === "medical") {
+          const total = parseInt(x.unit.replace("/", ""), 10) || 0;
+          return `${x.value} of ${total} medical-priority homes protected in the model (${total ? Math.round((x.value / total) * 100) : 0}%)`;
+        }
+        if (id === "headroom") return `≈${fmt(((x.value / n) * N) / 1000, 2)} MW of peak headroom freed`;
+        if (id === "value") return `≈${money((x.value / n) * N)} per peak event`;
+        return "";
+      };
+    box.innerHTML =
+      `<p class="small">${safe(funding.note)} Current model: ${safe(region?.name || "—")} ${badge(region?.provenance || "")}</p>` +
+      funding.programs
+        .map(
+          (p) => `<div class="fund-card"><div class="eyebrow">${safe(p.role.toUpperCase())}</div><h3>${safe(p.name)}</h3><p>${safe(p.detail)} <span class="small">${safe(p.provenance)}</span></p>
+          <table class="fig-table">${p.phases
+            .map(
+              (ph) =>
+                `<tr><td><b>${safe(ph.phase)}</b></td><td>${safe(ph.goal)}</td><td>${ph.metrics.map((id) => `<div>${safe(line(id, ph.homes))} ${badge("ASSUMED")}</div>`).join("")}</td></tr>`,
+            )
+            .join("")}</table></div>`,
+        )
+        .join("");
   }
 
   // ---------- mount ----------
   function mount() {
     document.querySelector(".topbar").after(el("div", { id: "headline", className: "headline", role: "status" }));
-    document.querySelector(".pagehead").after(el("div", { id: "twistBar", className: "twistbar" }));
+    const bar = el("div", { className: "controlbar" });
+    bar.append(el("div", { id: "regionPicker", className: "regionpicker" }), el("div", { id: "twistBar", className: "twistbar" }));
+    document.querySelector(".pagehead").after(bar);
     const actions = document.querySelector(".global-actions");
-    const run = el("button", { id: "runDemo", className: "primary run" }, "▶ Run demo");
-    const toggle = el("button", { id: "demoToggle", title: "Bundled snapshots; no network calls" }, root.POWERUP_DEMO ? "Demo mode: ON" : "Offline demo mode");
-    actions.prepend(run, toggle);
+    const run = el("button", { id: "runDemo", className: "primary run" }, "▶ Run demo"),
+      toggle = el("button", { id: "demoToggle", title: "Bundled snapshots; no network calls" }, root.POWERUP_DEMO ? "Offline mode: ON" : "Offline demo mode"),
+      poster = el("a", { href: "poster.html", target: "_blank", className: "button-link", title: "Print-ready 24×36 poster" }, "Poster ↗");
+    actions.prepend(run, toggle, poster);
+    // Pilot & Funding tab (rail button + view), driven by config/funding.json.
+    const nav = document.querySelector(".rail-nav"),
+      fbtn = el(
+        "button",
+        { className: "rail-button", title: "Pilot & Funding", ariaLabel: "Pilot & Funding" },
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M7 7h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/></svg><span>Pilot &amp; Funding</span>',
+      );
+    fbtn.dataset.view = "funding";
+    nav.append(fbtn);
+    const sec = el("section", { className: "app-view", hidden: true }, '<div class="panel fund"><div class="eyebrow">PILOT & FUNDING / EACH PHASE MAPS TO A METRIC THE APP COMPUTES</div><h2>Pilot &amp; Funding</h2><div id="fundingBody"></div></div>');
+    sec.dataset.appView = "funding";
+    document.querySelector('[data-app-view="residents"]').after(sec);
+    fbtn.onclick = () => {
+      V.view("funding");
+      document.querySelector(".pagehead .eyebrow").textContent = "PILOT & FUNDING";
+      renderFunding();
+    };
     document.body.append(
       el("div", { id: "demoFigure", className: "demofigure", hidden: true }),
       el(
         "div",
         { id: "captionBar", className: "captionbar", hidden: true, role: "region", ariaLabel: "Demo narration" },
-        '<div class="cap-progress"><span id="capProgress"></span></div><div class="cap-body"><span id="capStep" class="cap-step"></span><div><b id="capTitle"></b><p id="capText"></p></div><div class="cap-controls"><button id="capPause">❚❚ Pause</button><button id="capNext" class="primary">Next →</button><button id="capStop" title="Stop demo">✕</button></div></div>',
+        '<div id="timeline" class="timeline"></div><div class="cap-progress"><span id="capProgress"></span></div><div class="cap-body"><span id="capStep" class="cap-step"></span><div><b id="capTitle"></b><p id="capText"></p></div><div class="cap-controls"><button id="capPause">❚❚ Pause</button><button id="capNext" class="primary">Next →</button><button id="capStop" title="Stop demo">✕</button></div></div>',
       ),
     );
     run.onclick = start;
@@ -493,34 +693,41 @@
       } else if (e.key === "ArrowRight") go(demo.i + 1);
       else if (e.key === "Escape") stop(false);
     });
-    if (root.POWERUP_DEMO) {
-      $("dataBadge").textContent = "DEMO MODE · BUNDLED SNAPSHOTS · NO NETWORK";
-      document.body.classList.add("demo-mode");
-    }
+    if (root.POWERUP_DEMO) document.body.classList.add("demo-mode");
   }
   const baseRender = render;
   render = function () {
     baseRender.apply(this, arguments);
     renderHeadline();
-    const badge = $("dataBadge");
-    if (root.POWERUP_DEMO && !badge.textContent.startsWith("DEMO")) badge.textContent = "DEMO SNAPSHOTS · " + badge.textContent;
+    const b = $("dataBadge");
+    if (root.POWERUP_DEMO && !b.textContent.startsWith("OFFLINE")) b.textContent = "OFFLINE SNAPSHOTS · " + b.textContent;
   };
   mount();
   renderHeadline();
-  const ready = fetch("data/twists.json")
-    .then((r) => {
-      if (!r.ok) throw Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then((config) => {
-      C = root.PowerupConfig = config;
-      C.originalCriticalLoads = P.clone(C.criticalLoads);
-      writeInputs({ cfg, shield: shieldValues(), criticalLoads: P.clone(C.criticalLoads) });
-      renderTwists();
-      if (root.POWERUP_DEMO && !homes.length) {
-        V.offline();
-        if (new URLSearchParams(location.search).has("autoplay")) start();
+  const ready = Promise.all([
+    getJSON("data/twists.json"),
+    getJSON("config/regions/index.json"),
+    getJSON("config/funding.json"),
+    getJSON("data/snapshots/sce.json"),
+    getJSON("data/snapshots/nws.json"),
+  ])
+    .then(async ([twists, index, fund, sce, nws]) => {
+      C = root.PowerupConfig = twists;
+      funding = fund;
+      snaps = { sce, nws };
+      for (const id of index.regions) {
+        const r = M.validateRegion(await getJSON(`config/regions/${id}.json`));
+        r.scenarioData = M.validateScenario(typeof r.scenario === "string" ? await getJSON(r.scenario) : r.scenario);
+        R[id] = r;
       }
+      const q = new URLSearchParams(location.search);
+      region = R[q.get("region")] || R[index.default];
+      scenario = region.scenarioData;
+      C.criticalLoads = P.clone(region.criticalLoads);
+      renderRegionPicker();
+      renderTwists();
+      if (root.POWERUP_DEMO || q.has("region")) loadRegion(region.id);
+      if (q.has("autoplay")) start();
       render();
     })
     .catch((e) => {
@@ -528,5 +735,5 @@
       $("banner").textContent =
         "Demo config not loaded (" + e.message + "). Open through start-windows.bat / start-mac.sh, not by double-clicking the file.";
     });
-  root.PowerupDemo = { start, pause, stop, go, handoffItems, decisions, toggleTwist, state: demo };
+  root.PowerupDemo = { start, pause, stop, go, loadRegion, handoffItems, decisions, toggleTwist, metrics, state: demo, ready };
 })(globalThis);

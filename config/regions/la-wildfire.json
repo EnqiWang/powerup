@@ -1,0 +1,63 @@
+{
+  "schema": "powerup.region.v1",
+  "id": "la-wildfire",
+  "name": "Los Angeles · wildfire (PSPS)",
+  "provenance": "REAL",
+  "provenanceNote": "Hazard feed, utility rules and usage are real public sources; battery state, consent and headroom are ASSUMED.",
+  "scenario": "scenarios/bryson_malibu_2026.json",
+  "hazardFeed": {
+    "name": "National Weather Service (api.weather.gov) alerts and forecasts",
+    "levels": [
+      "Fire Weather Watch",
+      "Red Flag Warning",
+      "Heat Advisory"
+    ],
+    "provenance": "REAL"
+  },
+  "shutoffRules": {
+    "name": "SCE Public Safety Power Shutoff (PSPS)",
+    "summary": "Utility may de-energize high-fire-risk circuits during dangerous wind; customers are notified in advance where possible.",
+    "provenance": "REAL"
+  },
+  "units": {
+    "temperature": "°F",
+    "energy": "kWh",
+    "power": "kW"
+  },
+  "currency": {
+    "code": "USD",
+    "symbol": "$",
+    "buy": 0.15,
+    "sell": 0.4,
+    "provenance": "ASSUMED"
+  },
+  "medicalLabel": "Medical Baseline homes protected",
+  "siteLabel": "home",
+  "criticalLoads": [
+    {
+      "id": "cold",
+      "inputId": "coldKw",
+      "name": "Cold storage (scenario)",
+      "kw": 8,
+      "graceHours": 1,
+      "provenance": "ASSUMED"
+    },
+    {
+      "id": "cell",
+      "inputId": "commsKw",
+      "name": "Cell site (scenario)",
+      "kw": 3,
+      "graceHours": 0,
+      "provenance": "ASSUMED"
+    },
+    {
+      "id": "port",
+      "inputId": "portKw",
+      "name": "Port of Long Beach berth lighting/security (ASSUMED, scaled)",
+      "kw": 6,
+      "graceHours": 0,
+      "provenance": "ASSUMED",
+      "note": "Scaled illustrative load only. Not Port of Long Beach data; PoweruP does not control, power or protect port equipment."
+    }
+  ]
+}
