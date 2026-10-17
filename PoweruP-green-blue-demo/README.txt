@@ -192,3 +192,13 @@ reminders. Notification readiness levels and shutoff times are manual scenarios.
 Export demo outbox creates a separate JSON with masked destinations. This panel
 resets when the page reloads; its state is not restored by the fleet snapshot.
 Real SMS/email integration and verified utility notices are future work.
+
+
+ZIP VIEW UPDATE
+No fictional starter houses load at startup. The planner begins empty.
+Load SCE API fetches the selected ZIPs and applies usable historical monthly
+benchmarks directly. ZIP cards display actual ZIP, reporting month, account
+count and monthly average. Each backup calculation models one battery against
+a representative per-account average. It is not a real home or backup for all
+accounts in the ZIP. A failed API request preserves existing loaded records and
+never creates substitute households. Household profile imports remain supported.

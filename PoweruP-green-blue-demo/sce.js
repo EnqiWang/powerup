@@ -6,7 +6,7 @@ function sceCards(items){
 }
 function labelSceSource(){
  if(source?.kind!=='zip-benchmark')return;
- $('source').textContent=`${homes.length} representative household scenarios based on SCE monthly ZIP averages. Not measured individual homes. Battery state, load shares, needs and permissions are assumptions.`;
+ $('source').textContent=`${homes.length} ZIP usage scenarios based on SCE monthly ZIP averages. Not measured individual homes. Battery state, load shares, needs and permissions are assumptions.`;
  $('sourceMini').textContent=homes.length+' ZIP-based representative homes';
  $('dataBadge').textContent='REAL ZIP AGGREGATES / REPRESENTATIVE HOMES / SIMULATED BATTERIES';
  if(Array.isArray(source.benchmarks)){
@@ -32,14 +32,15 @@ $('loadSce').onclick=async()=>{
   const usable=sceSnapshots.filter(d=>d.latest?.usable).length;
   $('applySce').disabled=!usable;
   $('sceStatus').textContent=`${usable} usable ZIP benchmarks; ${sceSnapshots.length-usable} unavailable. Observation months are shown on each card. `+(failures.length?'Failed requests: '+failures.join(' | '):'Review, then build the representative fleet.');
+  if(usable){$('applySce').onclick();if(failures.length)$('sceStatus').textContent+=' Some ZIP requests failed: '+failures.join(' | ');}
  }catch(error){$('sceStatus').textContent='SCE data NOT loaded: '+error.message+'. No data was substituted.';}
  finally{$('loadSce').disabled=false;}
 };
 $('applySce').onclick=()=>{
  const available=sceSnapshots.filter(d=>d.latest?.usable&&Number.isFinite(d.latest.meanKw)&&d.latest.meanKw>0&&d.latest.meanKw<=100);
  if(!available.length){$('sceStatus').textContent='No usable average is available. Existing fleet retained.';return;}
- homes=available.map((d,i)=>{const r=d.latest,period=r.year+'-'+String(r.month).padStart(2,'0');return decorate(P.makeHome(i+1,'Representative · ZIP '+d.zip,r.meanKw,{kind:'zip-benchmark',location:'SCE residential account average · ZIP '+d.zip,first:period,last:period,source:d.source,monthlyKwh:r.averagekwh,accounts:r.totalaccounts,combined:r.combined,apiUrl:d.apiUrl}));});
+ homes=available.map((d,i)=>{const r=d.latest,period=r.year+'-'+String(r.month).padStart(2,'0');return decorate(P.makeHome(i+1,'ZIP '+d.zip+' · Usage scenario',r.meanKw,{kind:'zip-benchmark',location:'SCE residential account average · ZIP '+d.zip,first:period,last:period,source:d.source,monthlyKwh:r.averagekwh,accounts:r.totalaccounts,combined:r.combined,apiUrl:d.apiUrl}));});
  source={kind:'zip-benchmark',source:'SCE monthly ZIP aggregates via ORNL OpenEnergy Hub',location:'Selected LA-area ZIP benchmarks; no verified common feeder',method:'Monthly average kWh divided by calendar days and 24; constant-load representative scenarios, not measured household profiles.',benchmarks:available};
- selected=1;changed('Representative fleet created from real historical ZIP averages. Battery state and resident permissions reset as scenario inputs.');
- labelSceSource();sceSnapshots=available;sceCards(available);$('sceStatus').textContent='Representative fleet applied. Real monthly benchmarks inform the model; individual homes, hourly behavior and battery state are simulated. Start the guided demo.';
+ selected=1;changed('ZIP scenarios created from real historical SCE averages. Battery state and resident permissions reset as scenario inputs.');
+ labelSceSource();sceSnapshots=available;sceCards(available);$('sceStatus').textContent='ZIP usage scenarios applied. Real monthly benchmarks inform the model; individual homes, hourly behavior and battery state are simulated. Start the guided demo.';
 };

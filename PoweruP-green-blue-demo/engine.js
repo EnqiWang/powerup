@@ -13,7 +13,7 @@ function makeHome(i,name,mean=1.5,measurement=null){
  {id:'ev',name:'Flexible charging allowance',kw:mean*.15,reduction:1,consent:'unasked',rank:1},
  {id:'other',name:'Other discretionary allowance',kw:mean*.1,reduction:1,consent:'unasked',rank:0}]};
 }
-function defaults(){return ['Juniper','Cedar','Willow','Olive','Maple','Palm'].map((n,i)=>makeHome(i+1,n+' House',[1.9,.85,2.3,1.1,2.7,1.5][i]));}
+function defaults(){return [1.9,.85,2.3,1.1,2.7,1.5].map((kw,i)=>makeHome(i+1,'Test profile '+(i+1),kw));}
 function total(h){return h.loads.reduce((s,l)=>s+l.kw,0);}
 function budget(h,c,energy=h.energy){
  home(h);config(c);finite(energy,0,h.capacity,'budget energy');
