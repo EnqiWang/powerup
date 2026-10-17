@@ -5,21 +5,21 @@ function sceCards(items) {
   $("sceRecords").innerHTML = items
     .map((data) => {
       const r = data.latest;
-      return `<div class="sce-record"><b>ZIP ${safe(data.zip)}</b><div class="small">${r ? safe(r.year) + "-" + String(r.month).padStart(2, "0") : "No residential records"}</div>${r?.usable ? `<strong>${r.averagekwh.toFixed(1)} kWh / month</strong><div class="small">${r.dailyKwh.toFixed(2)} kWh/day · ${r.meanKw.toFixed(3)} kW average<br>${safe(r.totalaccounts ?? "Unreported")} SCE accounts · combined flag ${safe(r.combined ?? "unknown")}</div>` : '<strong>Unavailable</strong><div class="small">Latest value is missing or suppressed. No earlier month is silently substituted.</div>'}<div class="small">Fetched ${safe(new Date(data.fetchedAt).toLocaleString())}${data.stale ? " · STALE cached response" : data.cached ? " · cached" : " · API response"}</div></div>`;
+      return `<div class="sce-record"><b>ZIP ${safe(data.zip)}</b><div class="small">${r ? safe(r.year) + "-" + String(r.month).padStart(2, "0") : "No residential records"}</div>${r?.usable ? `<strong>${r.averagekwh.toFixed(1)} kWh / month</strong><div class="small">${r.dailyKwh.toFixed(2)} kWh/day · ${r.meanKw.toFixed(3)} kW average<br>${safe(r.totalaccounts ?? "Unreported")} SCE accounts · combined flag ${safe(r.combined ?? "unknown")}</div>` : '<strong>Unavailable</strong><div class="small">Latest value is missing or suppressed. No earlier month is silently substituted.</div>'}<div class="small">Fetched ${safe(new Date(data.fetchedAt).toLocaleString())}${data.stale ? " · saved data · refresh to check for updates" : data.cached ? " · cached" : " · API response"}</div></div>`;
     })
     .join("");
 }
 function labelSceSource() {
   if (source?.kind !== "zip-benchmark") return;
   $("source").textContent =
-    `${homes.length} ZIP usage scenarios based on SCE monthly ZIP averages. Not measured individual homes. Battery state, load shares, needs and permissions are assumptions.`;
-  $("sourceMini").textContent = homes.length + " ZIP-based representative homes";
-  $("dataBadge").textContent = "REAL ZIP AGGREGATES / REPRESENTATIVE HOMES / SIMULATED BATTERIES";
+    `${homes.length} example homes based on SCE electricity averages by ZIP code. Battery charge, appliance use and resident choices are demo settings.`;
+  $("sourceMini").textContent = homes.length + " example homes from ZIP data";
+  $("dataBadge").textContent = "PAST ZIP ELECTRICITY USE / DEMO HOMES";
   if (Array.isArray(source.benchmarks)) {
     sceSnapshots = source.benchmarks.map((d) => ({ ...d, stale: true }));
     sceCards(sceSnapshots);
     $("sceStatus").textContent =
-      "Saved historical benchmark snapshot. Refresh API to verify availability; fetched date and observation month remain visible.";
+      "Showing saved electricity data. Load electricity data again to check for updates. Each card shows the date of the readings.";
   }
 }
 $("loadSce").onclick = async () => {

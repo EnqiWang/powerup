@@ -14,7 +14,7 @@ function mount(el){
  if(host===el&&document.getElementById('geoCanvas'))return;
  if(map){map.remove();map=null;ready=false;handlersBound=false;}
  host=el;
- el.innerHTML='<div id="geoCanvas" aria-label="Geographic map of Los Angeles with Census ZIP-area boundaries"></div><div class="geo-heading"><span>LOS ANGELES / GEOGRAPHIC VIEW</span><small>OSM basemap · Census ZCTA areas · modeled batteries</small></div><div class="geo-tools"><button id="geoFit" title="Show all loaded ZIP areas">Fit ZIPs</button><button id="geoTilt" title="Toggle map tilt">3D view</button><button id="geoRetry">Retry map</button></div><div id="geoStatus" class="geo-status" role="status">Loading real map…</div><div id="geoList" class="geo-list"></div>';
+ el.innerHTML='<div id="geoCanvas" aria-label="Geographic map of Los Angeles with Census ZIP-area boundaries"></div><div class="geo-heading"><span>LOS ANGELES / ZIP CODE MAP</span><small>Street map · Census ZIP areas · demo homes</small></div><div class="geo-tools"><button id="geoFit" title="Show all loaded ZIP areas">Fit ZIPs</button><button id="geoTilt" title="Toggle map tilt">3D view</button><button id="geoRetry">Retry map</button></div><div id="geoStatus" class="geo-status" role="status">Loading real map…</div><div id="geoList" class="geo-list"></div>';
  document.getElementById('geoCanvas').insertAdjacentHTML('afterend','<div id="geoFallback" class="geo-fallback" hidden></div>');
  document.getElementById('geoFit').onclick=()=>fit(true);
  document.getElementById('geoTilt').onclick=()=>{if(map){const tilt=map.getPitch()<=30;map.easeTo({pitch:tilt?48:0,zoom:tilt?Math.max(map.getZoom(),15.3):map.getZoom(),duration:900});}};
@@ -38,7 +38,7 @@ function select(h,fly=true){
 }
 function rows(){
  const target=document.getElementById('geoList');if(!target)return;
- target.innerHTML=options.homes.map(h=>{const b=options.viewBudget(h),zip=zipOf(h);return `<button class="geo-chip ${h.id===options.selected?'active':''}" data-geohome="${h.id}"><b>${esc(zip?'ZIP '+zip:h.name)}</b><span>${h.online?(Number.isFinite(b.runtime)?b.runtime.toFixed(1)+'h':'—'):'Unknown'} modeled backup</span></button>`;}).join('')||'<button id="geoConnect" class="primary">Connect ZIP data ↗</button><button id="geoOffline">Use saved SCE usage</button>';
+ target.innerHTML=options.homes.map(h=>{const b=options.viewBudget(h),zip=zipOf(h);return `<button class="geo-chip ${h.id===options.selected?'active':''}" data-geohome="${h.id}"><b>${esc(zip?'ZIP '+zip:h.name)}</b><span>${h.online?(Number.isFinite(b.runtime)?b.runtime.toFixed(1)+'h':'—'):'Unknown'} estimated backup</span></button>`;}).join('')||'<button id="geoConnect" class="primary">Load electricity data ↗</button><button id="geoOffline">Use saved electricity data</button>';
  target.querySelectorAll('[data-geohome]').forEach(el=>el.onclick=()=>select(options.homes.find(h=>h.id===+el.dataset.geohome)));
  const connect=document.getElementById('geoConnect');if(connect)connect.onclick=()=>root.PowerupVisual?.view('data');
  const offline=document.getElementById('geoOffline');if(offline)offline.onclick=()=>root.PowerupVisual?.offline();
@@ -48,7 +48,7 @@ function fallback(){
  const el=document.getElementById('geoFallback');if(!el)return;
  if(ready||!fallbackReason){el.hidden=true;return;}
  const byZip=new Map(options.homes.map(h=>[zipOf(h),h])),feats=(geo?.features||[]).filter(f=>byZip.has(f.properties.zip));
- const note=`<div class="geo-fallback-note">OFFLINE MAP &middot; Census 2020 ZCTA outlines, no street basemap &middot; ${esc(fallbackReason)}</div>`;
+ const note=`<div class="geo-fallback-note">OFFLINE MAP &middot; Census ZIP areas without street details &middot; ${esc(fallbackReason)}</div>`;
  el.hidden=false;
  if(!feats.length){el.innerHTML=note;return;}
  const rings=g=>g.type==='Polygon'?g.coordinates:g.coordinates.flat(),pts=feats.flatMap(f=>rings(f.geometry).flat());
@@ -105,7 +105,7 @@ async function loadMap(){
      if(!map.getSource('powerup-osm-buildings'))map.addSource('powerup-osm-buildings',{type:'vector',url:'https://tiles.openfreemap.org/planet'});
      if(!map.getLayer?.('powerup-3d-buildings'))map.addLayer({id:'powerup-3d-buildings',type:'fill-extrusion',source:'powerup-osm-buildings','source-layer':'building',minzoom:15,filter:['!=',['get','hide_3d'],true],paint:{'fill-extrusion-color':theme==='light'?'#a8c4ce':'#275966','fill-extrusion-height':['coalesce',['get','render_height'],0],'fill-extrusion-base':['coalesce',['get','render_min_height'],0],'fill-extrusion-opacity':.8}},before);
     }catch(e){/* Geographic 2D map remains available if optional building layer fails. */}
-    status(geo?'Census areas located. Click a ZIP to inspect its real location.':'Real LA map loaded. Load ZIP usage to highlight Census areas.');draw();
+    status(geo?'ZIP areas loaded. Select one to see its example home.':'Map ready. Load electricity data to show ZIP areas.');draw();
    };
    map.on('load',restoreStyle);map.on('style.load',restoreStyle);
    map.on('error',()=>{status('Some map assets failed to load. Showing the Census outline fallback.');if(!ready){fallbackReason='Map tiles failed to load.';fallback();}});

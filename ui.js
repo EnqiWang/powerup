@@ -27,12 +27,12 @@ function decorate(){
  if(!first||first.dataset.uiDecorated||!doc.getElementById('soc'))return;
  first.dataset.uiDecorated='true';first.classList.add('profile-summary');
  const source=first.firstElementChild;
- if(source?.classList.contains('insight'))first.appendChild(fold('source','Source & model assumptions',[source]));
+ if(source?.classList.contains('insight'))first.appendChild(fold('source','Data & estimates',[source]));
  const fields=doc.getElementById('soc').closest('.fields');
  const priority=doc.getElementById('priority').closest('label'),disconnect=doc.getElementById('disconnect');
- first.appendChild(fold('battery','Battery scenario settings',[fields,priority,disconnect]));
+ first.appendChild(fold('battery','Battery settings',[fields,priority,disconnect]));
  const flex=Array.from(target.children).find(n=>n!==first&&!n.classList.contains('extra-detail')&&n.querySelector('#requestFlex'));
- if(flex){const box=fold('permissions','Resident permissions & load estimates',[flex]);target.appendChild(box);}
+ if(flex){const box=fold('permissions','Resident choices & power use',[flex]);target.appendChild(box);}
  const extra=target.querySelector('.extra-detail');
  if(extra){
   const groups=[];let current=null;

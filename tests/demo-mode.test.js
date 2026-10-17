@@ -59,7 +59,7 @@ test("initial theme defaults to light while honoring a saved choice", () => {
 
 test("scenario controls auto-load the demo fleet and omit the assumed heading", () => {
   const demo = fs.readFileSync(path.join(root, "demo.js"), "utf8");
-  assert.match(demo, /STRESS-TEST SCENARIOS/);
+  assert.match(demo, /TRY A SCENARIO/);
   assert.doesNotMatch(demo, /TWISTS <i class="prov assumed">ASSUMED<\/i>/);
   assert.match(demo, /if \(!homes\.length\) \{\s*setupFleet\(\);\s*\}/);
 });

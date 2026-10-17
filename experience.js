@@ -9,13 +9,13 @@ $("closeRequest").onclick = () => $("requestPreview").close();
 function renderReadiness() {
   const el = $("readiness");
   if (!weatherSnapshot) {
-    el.textContent = "Weather evidence not loaded · operator review required";
+    el.textContent = "Load weather to check for warnings";
     el.className = "readiness";
     return;
   }
   const w = weatherSnapshot;
   if (w.stale) {
-    el.textContent = "STALE WEATHER · current conditions unverified";
+    el.textContent = "SAVED WEATHER · refresh to check current conditions";
     el.className = "readiness caution";
     return;
   }
@@ -26,10 +26,10 @@ function renderReadiness() {
     elevated = events.some((x) => /Fire Weather Watch|Wind Advisory|Heat Advisory/i.test(x));
   el.textContent =
     (severe
-      ? "HEIGHTENED READINESS REVIEW"
+      ? "Serious weather warning: review the plan"
       : elevated
-        ? "ELEVATED READINESS REVIEW"
-        : "NO SELECTED HAZARD ALERT RETURNED") + " · rule-based alert triage, not outage probability";
+        ? "Weather watch or advisory: check the plan"
+        : "No matching wind, fire or heat alert returned") + " · weather alone does not confirm a power outage";
   el.className = "readiness" + (severe || elevated ? " caution" : "");
 }
 function renderExtraDetail(h) {
@@ -37,8 +37,8 @@ function renderExtraDetail(h) {
   wrapper.className = "extra-detail";
   const diag = P.diagnose(h, homes),
     d = plan?.homes.find((x) => x.id === h.id);
-  wrapper.innerHTML = `<h3>Grid participation</h3><label class="toggle"><input id="gridEnrollment" type="checkbox" ${h.gridParticipation ? "checked" : ""} ${outage ? "disabled" : ""}> Scenario enrollment permits grid support above reserve</label><p class="small">This records a simulation assumption, not an actual Base member agreement.</p><h3>Before-outage preparation</h3><p class="small">Optional tasks consume the same charging headroom. No device commands are sent; thermal benefit is not assumed automatically.</p>${h.prepTasks.map((t) => `<div class="load"><label class="toggle"><input data-task="${t.id}" type="checkbox" ${t.enabled && t.accepted ? "checked" : ""} ${outage ? "disabled" : ""}> Resident accepts ${safe(t.name)}</label><div class="fields"><label>Task energy (kWh)<input data-taskenergy="${t.id}" type="number" min="0" max="100" step="0.1" value="${t.kwh}" ${outage ? "disabled" : ""}></label><label>Power cap (kW)<input data-taskrate="${t.id}" type="number" min="0.1" max="20" step="0.1" value="${t.rate}" ${outage ? "disabled" : ""}></label></div><div class="small">${d ? fmt(d.tasks.find((x) => x.id === t.id)?.delivered || 0) + " kWh scheduled; " + fmt(d.tasks.find((x) => x.id === t.id)?.remaining ?? (t.enabled ? t.kwh : 0)) + " kWh unfinished." : "Scenario task; no measured EV or building thermal data."}</div></div>`).join("")}
- <hr><h3>Silent battery: evidence & handoff</h3><div class="insight"><b>${safe(diag.label)}</b><br>${safe(diag.confidence)}<br>${safe(diag.next)}</div><details><summary>Auxiliary evidence (simulation)</summary><p class="small">Use fresh independent evidence to test triage. These are injected observations, not readings from the household dataset.</p><label class="toggle"><input id="freshEvidence" type="checkbox" ${h.evidence.fresh ? "checked" : ""}> Independent auxiliary evidence is fresh</label><label>Auxiliary grid voltage<select id="gridVoltage"><option value="120">120 V present</option><option value="0">0 V reported</option></select></label><label>Auxiliary breaker status<select id="breaker"><option value="unknown">Unknown</option><option value="tripped">Tripped report</option><option value="closed">Closed report</option></select></label><label class="toggle"><input id="faultEvidence" type="checkbox" ${h.evidence.fault ? "checked" : ""}> Independent fault report</label><p class="small">Network group: ${safe(h.provider)} · assigned for scenario correlation only.</p></details>`;
+  wrapper.innerHTML = `<h3>Grid participation</h3><label class="toggle"><input id="gridEnrollment" type="checkbox" ${h.gridParticipation ? "checked" : ""} ${outage ? "disabled" : ""}> Resident allows spare battery energy to help the grid</label><p class="small">This is a demo choice. Backup energy is kept for the home.</p><h3>Before-outage preparation</h3><p class="small">These tasks share the power available for charging. The demo does not control devices or assume that pre-cooling will save energy later.</p>${h.prepTasks.map((t) => `<div class="load"><label class="toggle"><input data-task="${t.id}" type="checkbox" ${t.enabled && t.accepted ? "checked" : ""} ${outage ? "disabled" : ""}> Resident accepts ${safe(t.name)}</label><div class="fields"><label>Energy needed (kWh)<input data-taskenergy="${t.id}" type="number" min="0" max="100" step="0.1" value="${t.kwh}" ${outage ? "disabled" : ""}></label><label>Maximum power (kW)<input data-taskrate="${t.id}" type="number" min="0.1" max="20" step="0.1" value="${t.rate}" ${outage ? "disabled" : ""}></label></div><div class="small">${d ? fmt(d.tasks.find((x) => x.id === t.id)?.delivered || 0) + " kWh scheduled; " + fmt(d.tasks.find((x) => x.id === t.id)?.remaining ?? (t.enabled ? t.kwh : 0)) + " kWh unfinished." : "Scenario task; no measured EV or building thermal data."}</div></div>`).join("")}
+ <hr><h3>Battery not reporting: checks & next steps</h3><div class="insight"><b>${safe(diag.label)}</b><br>${safe(diag.confidence)}<br>${safe(diag.next)}</div><details><summary>Extra checks (demo)</summary><p class="small">Try different readings to explore why a battery stopped reporting. These are demo inputs.</p><label class="toggle"><input id="freshEvidence" type="checkbox" ${h.evidence.fresh ? "checked" : ""}> These extra readings are recent</label><label>Power line voltage<select id="gridVoltage"><option value="120">120 V present</option><option value="0">0 V reported</option></select></label><label>Circuit breaker status<select id="breaker"><option value="unknown">Unknown</option><option value="tripped">Tripped report</option><option value="closed">Closed report</option></select></label><label class="toggle"><input id="faultEvidence" type="checkbox" ${h.evidence.fault ? "checked" : ""}> A separate check reports a fault</label><p class="small">Network group: ${safe(h.provider)} · assigned for scenario correlation only.</p></details>`;
   $("detail").appendChild(wrapper);
   document.querySelectorAll("[data-task]").forEach(
     (el) =>
@@ -95,8 +95,8 @@ function shieldInputs() {
 }
 function renderShield() {
   const options = shieldInputs();
-  $("chartTitle").textContent = "Neighborhood relief action plan";
-  $("chartLabel").textContent = "Grid-connected, hypothetical single-feeder scenario";
+  $("chartTitle").textContent = "Plan to reduce local grid demand";
+  $("chartLabel").textContent = "Demo with the local power line still on";
   if (outage) {
     $("chart").innerHTML =
       '<div class="insight red">An outage replay is active. Isolated home batteries cannot supply the neighboring port, communications or cold store through a de-energized feeder. End/reset the replay before evaluating grid-connected support.</div>';
@@ -106,16 +106,16 @@ function renderShield() {
     r = P.relief(effectiveHomes, cfg, options);
   $("metrics").innerHTML = [
     [
-      "RELIEF REQUEST",
+      "POWER REDUCTION NEEDED",
       fmt(r.neededKw) + " kW",
       "Baseline " + fmt(r.baselineKw) + " kW / capacity " + options.capacity + " kW",
     ],
     [
-      "MODELED RELIEF",
+      "REDUCTION FROM THE PLAN",
       fmt(r.providedKw) + " kW",
       fmt(r.energyReliefKwh) + " kWh over " + options.hours + " hours",
     ],
-    ["UNRESOLVED CONSTRAINT", fmt(r.unresolvedKw) + " kW", r.unknown + " unknown batteries excluded"],
+    ["STILL NEEDS HELP", fmt(r.unresolvedKw) + " kW", r.unknown + " unknown batteries excluded"],
   ]
     .map(
       (x) =>
@@ -123,7 +123,7 @@ function renderShield() {
     )
     .join("");
   $("banner").textContent =
-    `Grid-connected scenario: accepted demand reductions first, battery energy above protected reserves second, operator handoff for any remaining ${fmt(r.unresolvedKw)} kW. External neighbors are constraints, not controllable loads. This calculation is not proof of prevented outages.`;
+    `With grid power on: reduce usage where residents agree, then use spare battery energy. The remaining ${fmt(r.unresolvedKw)} kW needs help from the utility. Nearby services are examples; the app cannot control them.`;
   $("chart").innerHTML =
     r.actions
       .map(
@@ -131,7 +131,7 @@ function renderShield() {
           `<div class="listitem"><b>${safe(homes.find((h) => h.id === a.home).name)}</b> · ${safe(a.kind)}<div class="small">${safe(a.name)} · ${fmt(a.kw)} kW relief</div></div>`,
       )
       .join("") +
-    `<div class="insight ${r.unresolvedKw ? "red" : ""}">${r.unresolvedKw ? "Hand off unresolved capacity to the utility operator; no blanket residential shutdown is issued." : "The modeled constraint is covered within the stated energy and power assumptions."}<br>Neighbors with limited grace: ${r.urgentNeighbors.map(safe).join(", ")}.</div>`;
+    `<div class="insight ${r.unresolvedKw ? "red" : ""}">${r.unresolvedKw ? "Ask the utility to handle the remaining demand." : "The plan covers the needed reduction with these demo settings."}<br>Nearby services that may need backup soon: ${r.urgentNeighbors.map(safe).join(", ")}.</div>`;
 }
 function renderAdvanced() {
   renderReadiness();

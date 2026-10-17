@@ -65,13 +65,14 @@
     }
     if (!m) {
       bar.innerHTML =
-        '<div class="hl-empty">Headline metrics appear once a fleet is loaded. Press <b>▶ Run demo</b> for the 3-minute story.</div>';
+        '<div class="hl-empty">See backup time and estimated earnings after loading homes. Choose <b>▶ Run demo</b> to try an example.</div>';
       return;
     }
     bar.innerHTML = m
       .map((x) => {
         const value = x.id === "value" ? "$" + f(x.value, 2) : f(x.value, x.id === "headroom" ? 1 : 0);
-        return `<div class="hl" title="${safe(x.sources)}"><span class="hl-label">${safe(x.label)} <i class="prov ${x.provenance.toLowerCase()}">${x.provenance}</i></span><strong>${value}<small> ${safe(x.unit)}</small></strong><span class="hl-detail">${safe(x.detail)}</span></div>`;
+        const sourceLabel = { REAL: "Recorded data", ASSUMED: "Estimate", MIXED: "Data + estimates" }[x.provenance];
+        return `<div class="hl" title="${safe(x.sources)}"><span class="hl-label">${safe(x.label)} <i class="prov ${x.provenance.toLowerCase()}">${sourceLabel}</i></span><strong>${value}<small> ${safe(x.unit)}</small></strong><span class="hl-detail">${safe(x.detail)}</span></div>`;
       })
       .join("");
   }
@@ -82,14 +83,16 @@
     if (!box || !C) return;
     const alerts = (root.weatherSnapshot || weatherSnapshot)?.alerts || [];
     box.innerHTML =
-      '<span class="twist-title">STRESS-TEST SCENARIOS</span>' +
+      '<span class="twist-title">TRY A SCENARIO</span>' +
       C.twists
         .map((t) => {
           const on = active.includes(t.id),
             ev = t.evidenceAlert && alerts.find((a) => a.event === t.evidenceAlert);
           return `<label class="twist ${on ? "on" : ""}" title="${safe(t.summary)}"><input type="checkbox" data-twist="${t.id}" ${on ? "checked" : ""}> ${safe(t.name)}${ev ? ' <i class="prov real" title="Bundled/loaded NWS response">NWS: ' + safe(ev.event) + "</i>" : ""}${on ? `<button class="trail" data-trail="${t.id}" title="Export decision trail for this twist">⇩ trail</button>` : ""}</label>`;
         })
-        .join("");
+        .join("") +
+      '<details class="scenario-help"><summary>What do these scenarios change?</summary><p>Try an example problem and see how the plan changes. Check a scenario to turn it on; uncheck it to undo its effects. These are demo events.</p>' +
+      C.twists.map((t) => `<p><b>${safe(t.name)}:</b> ${safe(t.summary)}</p>`).join("") + '</details>';
     box.querySelectorAll("[data-twist]").forEach((x) => (x.onchange = () => toggleTwist(x.dataset.twist, x.checked)));
     box.querySelectorAll("[data-trail]").forEach(
       (b) =>
@@ -505,7 +508,7 @@
   };
   mount();
   renderHeadline();
-  const ready = fetch("data/twists.json")
+  const ready = fetch("data/twists.json?v=19")
     .then((r) => {
       if (!r.ok) throw Error("HTTP " + r.status);
       return r.json();

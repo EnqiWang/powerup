@@ -17,7 +17,7 @@ function labelProfile(h) {
           .match(/\b\d{5}\b/)?.[0]
       : null;
   h.name = zip
-    ? `ZIP ${zip} · Usage scenario`
+    ? `ZIP ${zip} · Example home`
     : h.measurement
       ? String(h.name || `Measured profile ${h.id}`)
       : `Unconfigured profile ${h.id}`;
@@ -31,7 +31,7 @@ function decorate(h) {
   h.exportCap = h.exportCap || 3;
   h.prepTasks = h.prepTasks || [
     { id: "ev", name: "EV top-up", kwh: 2, rate: 1, enabled: false, accepted: false },
-    { id: "precool", name: "Preconditioning", kwh: 0.5, rate: 0.5, enabled: false, accepted: false },
+    { id: "precool", name: "Pre-cool or pre-heat the home", kwh: 0.5, rate: 0.5, enabled: false, accepted: false },
   ];
   return h;
 }
@@ -130,7 +130,7 @@ function viewBudget(h) {
 }
 
 function renderEmpty() {
-  $("fleetTitle").textContent = "ZIP readiness scenarios";
+  $("fleetTitle").textContent = "Backup by ZIP code";
   $("metrics").innerHTML =
     '<div class="metric"><span class="small">DATA STATUS</span><strong>Awaiting ZIP data</strong><span class="small">No invented households</span></div><div class="metric"><span class="small">PLANNING</span><strong>Not started</strong><span class="small">Load SCE records above</span></div><div class="metric"><span class="small">BATTERIES</span><strong>Scenario only</strong><span class="small">No enrolled devices connected</span></div>';
   $("map").innerHTML =
@@ -138,13 +138,13 @@ function renderEmpty() {
   $("selectedName").textContent = "Select a ZIP after loading";
   $("selectedStatus").textContent = "NO DATA";
   $("detail").innerHTML =
-    '<div class="padding"><p>ZIP consumption records appear after the API loads.</p><p class="small">Public SCE records cannot identify individual homes. Actual household measurements can also be imported separately.</p></div>';
+    '<div class="padding"><p>Home details appear after you load electricity data.</p><p class="small">Public SCE records cannot identify individual homes. Actual household measurements can also be imported separately.</p></div>';
   $("chartTitle").textContent = "Preparation charging";
-  $("chartLabel").textContent = "Awaiting demand inputs";
+  $("chartLabel").textContent = "Waiting for electricity data";
   $("chart").innerHTML =
     '<p class="small">Calculations appear automatically after loading ZIP records or measured profiles.</p>';
   $("banner").textContent =
-    "Load SCE API above to create ZIP-based usage scenarios. No household loads or readiness scores have been invented.";
+    "Open Data sources to load electricity use, or choose Run demo to try the saved example homes.";
   for (const id of ["plan", "approve", "projected", "startOutage", "advance", "finish", "simulatePeerLoss"])
     $(id).disabled = true;
   $("outageControls").hidden = mode !== "outage";
@@ -173,8 +173,8 @@ function render() {
   $("simulatePeerLoss").disabled = false;
   homes.forEach(labelProfile);
   $("fleetTitle").textContent = homes.some((h) => h.measurement?.kind === "zip-benchmark")
-    ? "ZIP readiness scenarios"
-    : "Measured profile readiness";
+    ? "Backup by ZIP code"
+    : "Backup by household";
   const known = homes.filter((h) => h.online),
     budgets = known.map((h) => viewBudget(h)),
     ready = budgets.filter((b) => b.targetMet).length,
@@ -190,14 +190,14 @@ function render() {
     peak = plan ? Math.max(0, ...plan.trace.map((t) => t.total)) : null;
   let metrics = [
     [
-      "MODELED PROFILES MEETING TARGET",
+      "HOMES WITH ENOUGH BACKUP",
       ready + " / " + homes.length,
-      `${homes.length - known.length} unknown · ${known.length - ready} known shortfalls`,
+      `${homes.length - known.length} not reporting · ${known.length - ready} need more energy`,
     ],
     [
-      "ESSENTIAL & RETAINED LOAD COVERAGE",
+      "TOTAL BACKUP HOURS",
       fmt(coverage) + " h",
-      "Sum of modeled profile-hours, capped at target",
+      "Added across homes, up to the hours each needs",
     ],
     [
       "PREVIEW STATUS",
@@ -209,19 +209,19 @@ function render() {
     const day = P.everyday(homes, { ...cfg, duration: prices.dailyReserve }, prices);
     metrics = [
       [
-        "INDICATIVE GRID EXPORT",
+        "SPARE ENERGY TO SELL",
         fmt(day.exportKwh) + " kWh",
-        "After household reserve protection; energy-only estimate",
+        "Estimated energy left after keeping backup power",
       ],
       [
-        "MODELED CONTRIBUTION",
+        "ESTIMATED EARNINGS",
         "$" + day.margin.toFixed(2),
-        "Export credit less future recharge cost; illustrative prices",
+        "Energy payments minus recharge costs, using example prices",
       ],
       [
-        "PROTECTED PROFILES",
+        "HOMES REPORTING",
         known.length + " / " + homes.length,
-        "Unknown capacity excluded · no actual utility dispatch",
+        "Batteries that are not reporting are left out",
       ],
     ];
   }
@@ -232,18 +232,18 @@ function render() {
     )
     .join("");
   $("modeTitle").textContent = {
-    shield: "Find the gentlest relief.",
-    prepare: "Prepare before disruption.",
+    shield: "Ease demand on the local grid.",
+    prepare: "Get ready before the outage.",
     outage: "Make stored energy last.",
-    everyday: "Support the grid with care.",
+    everyday: "Earn from spare energy.",
   }[mode];
   $("modeDescription").textContent = {
     shield:
-      "Fleet dispatcher: reduce a modeled neighborhood constraint without touching external critical loads.",
-    prepare: "Fleet dispatcher: allocate limited charging headroom and verify household readiness.",
-    outage: "Fleet dispatcher: set a duration target, apply accepted reductions, and escalate shortfalls.",
+      "See how home batteries and agreed energy savings can reduce demand on the local power line.",
+    prepare: "Share the available charging power across homes and check who still needs more backup.",
+    outage: "Choose how long backup must last. Save energy where residents agree, and flag homes that need help.",
     everyday:
-      "Second customer: utility demand-response dispatcher evaluating peak relief on an ordinary Tuesday.",
+      "Estimate earnings from selling spare battery energy while keeping backup power for each home.",
   }[mode];
   $("shieldControls").hidden = mode !== "shield";
   $("outageControls").hidden = mode !== "outage";
@@ -256,10 +256,10 @@ function render() {
   $("finish").disabled = $("advance").disabled;
   $("banner").textContent =
     mode === "everyday"
-      ? "Ordinary Tuesday scenario: estimated export uses only stored energy above the modeled household reserve. Prices and market access are assumptions. Household service during the event and inverter power constraints require separate validation."
+      ? "This estimate sells only energy left after keeping household backup. It uses example prices and does not include all costs, power limits or utility rules."
       : outage
-        ? `OUTAGE SIMULATOR · ${fmt(outage.elapsed)} hours elapsed. ${ready} known profiles can cover the remaining target; ${known.length - ready} need follow-up. Unknown devices remain unverified to the dispatcher. Local simulator state is shown separately.`
-        : `${cfg.duration}-hour target, ${cfg.lead}-hour preparation window, ${cfg.headroom} kW charging headroom. Resident load shares and battery state are scenario inputs. ${approved ? "Preparation approved for simulation." : plan ? "Preview updated automatically; ready for review." : "Valid input changes recalculate the preview automatically."}`;
+        ? `OUTAGE DEMO · ${fmt(outage.elapsed)} hours have passed. ${ready} homes have enough backup for the time left; ${known.length - ready} need more energy. Batteries that are not reporting are left out.`
+        : `Plan for ${cfg.duration} hours of backup, with ${cfg.lead} hours to charge and ${cfg.headroom} kW shared charging power. Home energy use and battery charge are demo settings. ${approved ? "Preparation approved for simulation." : plan ? "Preview updated automatically; ready for review." : "Valid input changes recalculate the preview automatically."}`;
   document
     .querySelectorAll("[data-mode]")
     .forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
@@ -329,13 +329,13 @@ function renderDetail() {
             `${safe(a.name)}: reduce ${Math.round(a.reduction * 100)}% (−${fmt(a.savedKw)} kW) until hour ${fmt(a.untilHours)}`,
         )
         .join("<br>")
-    : "No accepted reductions selected.";
+    : "No energy-saving changes have been agreed.";
   const measured = h.measurement
-    ? `<div class="insight">${h.measurement.kind === "zip-benchmark" ? "Representative scenario from ZIP monthly average" : "Historical measured proxy"}: ${fmt(h.meanKw)} kW.<br>${safe(h.measurement.location)}<br>${safe(h.measurement.first)} → ${safe(h.measurement.last)}<br>Appliance shares below are editable assumptions, not inferred essential needs.</div>`
+    ? `<div class="insight">${h.measurement.kind === "zip-benchmark" ? "Example home using its ZIP code's average electricity use" : "Past household electricity reading"}: ${fmt(h.meanKw)} kW.<br>${safe(h.measurement.location)}<br>${safe(h.measurement.first)} → ${safe(h.measurement.last)}<br>Appliance use below is estimated. Change it to try different household needs.</div>`
     : '<div class="insight">Demo profile. All loads and battery readings are simulated; this does not represent an enrolled household.</div>';
-  const header = `${measured}<div class="small">${outage ? "REMAINING SIMULATED BACKUP" : $("projected").checked && plan ? "PROJECTED PREPARATION BACKUP" : "SCENARIO BACKUP"}</div><div class="number">${h.online ? fmt(b.runtime) + " h" : "Unverified"}</div><div class="small">${fmt(b.baseKw)} kW baseline → ${fmt(b.plannedKw)} kW with accepted changes</div><div class="bar"><div style="width:${Math.min(100, (energy / h.capacity) * 100)}%"></div></div><div class="subrow"><span>${fmt(energy)} / ${h.capacity} kWh</span><span>${fmt(b.budgetKw)} kW budget</span></div><div class="insight ${b.targetMet ? "" : "red"}">${b.targetMet ? "Target feasible in this constant-load model." : `Target unmet: ${fmt(b.shortfallKwh)} additional stored kWh needed. Operator assistance required.`}<br>${actions}</div>${!h.online ? '<div class="insight red">Dispatcher cannot confirm battery operation. Recheck status and exclude unverified capacity from new dispatch.</div>' : ""}${d && !h.online ? `<details><summary>Local simulator observer (not telemetry)</summary><p class="small">Stored policy continues at ${fmt(d.plannedKw)} kW in this simulator. Remaining simulated energy: ${fmt(d.energy)} kWh. This does not establish actual offline firmware operation.</p></details>` : ""}${d ? `<div class="small">Unserved energy during replay: ${fmt(d.unservedKwh)} kWh. Required loads are never deliberately curtailed, but depletion can still interrupt them.</div>` : ""}
- <div class="fields"><label>Starting charge (%)<input id="soc" type="number" min="0" max="100" step="1" value="${Math.round((h.energy / h.capacity) * 100)}" ${disabled}></label><label>Charge cap (kW)<input id="rate" type="number" min="0.1" max="100" step="0.1" value="${h.rate}" ${disabled}></label></div><label>Operator priority<select id="priority" ${disabled}><option value="3">High</option><option value="2">Medium</option><option value="1">Standard</option></select></label><button id="disconnect" class="wide">${h.online ? "Simulate lost connection" : "Restore simulated connection"}</button>`;
-  const loads = `<div><h3>Resident flexibility</h3><p class="small">Record a simulated resident response for each allowance. Essential loads stay protected. A missing response grants no permission.</p>${h.loads.map((l) => `<div class="load"><h3>${safe(l.name)}</h3><div class="loadgrid"><label>Average kW<input data-load="${l.id}" type="number" min="0" max="100" step="0.001" value="${l.kw.toFixed(3)}" ${disabled}></label><label>${l.id === "essential" ? "Required service" : "Simulated resident response"}<select data-consent="${l.id}" ${disabled || l.id === "essential" ? "disabled" : ""}><option value="required">Required · preserve</option><option value="unasked">No response</option><option value="accepted">Accept for window below</option><option value="declined">Decline reduction</option></select></label></div><div class="small">${l.id === "essential" ? "Never intentionally reduced." : `Available reduction: ${Math.round(l.reduction * 100)}% of this average allowance.`}</div>${l.id !== "essential" ? `<label>Consent window (hours from outage start)<input data-window="${l.id}" type="number" min="0.25" max="168" step="0.25" value="${l.consentHours || 6}" ${disabled}></label><label class="toggle"><input data-gridconsent="${l.id}" type="checkbox" ${l.gridAccepted ? "checked" : ""} ${disabled}> Also permit this reduction for grid support</label>` : ""}</div>`).join("")}<button id="requestFlex" class="wide" ${disabled}>Create flexibility request (demo)</button><p class="small">No messages sent. No thermostat, EV or smart-panel integration.</p></div>`;
+  const header = `${measured}<div class="small">${outage ? "BACKUP LEFT IN THIS DEMO" : $("projected").checked && plan ? "ESTIMATED BACKUP AFTER CHARGING" : "ESTIMATED BACKUP"}</div><div class="number">${h.online ? fmt(b.runtime) + " h" : "Unverified"}</div><div class="small">${fmt(b.baseKw)} kW usual use → ${fmt(b.plannedKw)} kW with agreed changes</div><div class="bar"><div style="width:${Math.min(100, (energy / h.capacity) * 100)}%"></div></div><div class="subrow"><span>${fmt(energy)} / ${h.capacity} kWh</span><span>${fmt(b.budgetKw)} kW budget</span></div><div class="insight ${b.targetMet ? "" : "red"}">${b.targetMet ? "Enough backup for the chosen time, if power use stays as estimated." : `Needs ${fmt(b.shortfallKwh)} kWh more stored energy to last the chosen time. Arrange extra support.`}<br>${actions}</div>${!h.online ? '<div class="insight red">Dispatcher cannot confirm battery operation. Recheck status and exclude unverified capacity from new dispatch.</div>' : ""}${d && !h.online ? `<details><summary>Local simulator observer (not telemetry)</summary><p class="small">Stored policy continues at ${fmt(d.plannedKw)} kW in this simulator. Remaining simulated energy: ${fmt(d.energy)} kWh. This does not establish actual offline firmware operation.</p></details>` : ""}${d ? `<div class="small">Unserved energy during replay: ${fmt(d.unservedKwh)} kWh. Required loads are never deliberately curtailed, but depletion can still interrupt them.</div>` : ""}
+ <div class="fields"><label>Starting charge (%)<input id="soc" type="number" min="0" max="100" step="1" value="${Math.round((h.energy / h.capacity) * 100)}" ${disabled}></label><label>Maximum charging power (kW)<input id="rate" type="number" min="0.1" max="100" step="0.1" value="${h.rate}" ${disabled}></label></div><label>Charging priority<select id="priority" ${disabled}><option value="3">High</option><option value="2">Medium</option><option value="1">Standard</option></select></label><button id="disconnect" class="wide">${h.online ? "Simulate lost connection" : "Restore simulated connection"}</button>`;
+  const loads = `<div><h3>Energy residents can save</h3><p class="small">Choose which energy-saving changes the resident agrees to in this demo. Essential devices stay on while battery power lasts. No response means no permission.</p>${h.loads.map((l) => `<div class="load"><h3>${safe(l.name)}</h3><div class="loadgrid"><label>Power use (kW)<input data-load="${l.id}" type="number" min="0" max="100" step="0.001" value="${l.kw.toFixed(3)}" ${disabled}></label><label>${l.id === "essential" ? "Required service" : "Resident's choice (demo)"}<select data-consent="${l.id}" ${disabled || l.id === "essential" ? "disabled" : ""}><option value="required">Keep on</option><option value="unasked">No response</option><option value="accepted">Agree for the time below</option><option value="declined">Do not reduce</option></select></label></div><div class="small">${l.id === "essential" ? "Never intentionally reduced." : `Available reduction: ${Math.round(l.reduction * 100)}% of this power use.`}</div>${l.id !== "essential" ? `<label>How long the change is allowed (hours from outage start)<input data-window="${l.id}" type="number" min="0.25" max="168" step="0.25" value="${l.consentHours || 6}" ${disabled}></label><label class="toggle"><input data-gridconsent="${l.id}" type="checkbox" ${l.gridAccepted ? "checked" : ""} ${disabled}> Also allow this change when helping the grid</label>` : ""}</div>`).join("")}<button id="requestFlex" class="wide" ${disabled}>Preview a request to save energy</button><p class="small">No messages sent. No thermostat, EV or smart-panel integration.</p></div>`;
   $("detail").innerHTML = "<div>" + header + "</div>" + loads;
   $("priority").value = h.priority;
   $("soc").onchange = (e) => {
@@ -427,18 +427,18 @@ function renderChart() {
   }
   if (mode === "everyday") {
     const day = P.everyday(homes, { ...cfg, duration: prices.dailyReserve }, prices);
-    $("chartTitle").textContent = "Grid support above protected reserves";
-    $("chartLabel").textContent = "Illustrative economics · not an export commitment";
+    $("chartTitle").textContent = "Spare energy after keeping backup";
+    $("chartLabel").textContent = "Estimate using your example prices";
     $("chart").innerHTML = day.homes
       .map(
         (row) =>
-          `<div class="listitem"><b>${safe(homes.find((h) => h.id === row.id).name)}</b> · ${row.online ? fmt(row.exportKwh) + " kWh indicative export · $" + row.margin.toFixed(2) + " contribution" : "Unknown; excluded"}<div class="small">Protected stored reserve: ${fmt(row.reserveKwh)} kWh</div></div>`,
+          `<div class="listitem"><b>${safe(homes.find((h) => h.id === row.id).name)}</b> · ${row.online ? fmt(row.exportKwh) + " kWh to sell · $" + row.margin.toFixed(2) + " estimated earnings" : "Unknown; excluded"}<div class="small">Protected stored reserve: ${fmt(row.reserveKwh)} kWh</div></div>`,
       )
       .join("");
     return;
   }
   if (mode === "outage") {
-    $("chartTitle").textContent = "Runtime and target";
+    $("chartTitle").textContent = "Backup hours compared with your goal";
     $("chartLabel").textContent = outage ? "Local simulation replay" : "Before outage simulation";
     $("chart").innerHTML = homes
       .map((h) => {
@@ -449,9 +449,9 @@ function renderChart() {
       .join("");
     return;
   }
-  $("chartTitle").textContent = "Stagger preparation, avoid a new peak";
+  $("chartTitle").textContent = "Spread out charging to avoid a power spike";
   $("chartLabel").textContent = plan
-    ? `${fmt(Math.max(0, ...plan.trace.map((t) => t.total)))} kW peak / ${cfg.headroom} kW headroom`
+    ? `${fmt(Math.max(0, ...plan.trace.map((t) => t.total)))} kW peak / ${cfg.headroom} kW available`
     : "Updates automatically";
   if (!plan) {
     $("chart").innerHTML =
@@ -486,11 +486,11 @@ function renderChart() {
     path = (values) =>
       values.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
   $("chart").innerHTML =
-    `<svg viewBox="0 0 730 175" role="img" aria-label="Uncoordinated versus coordinated charging power"><path d="M40 140H710M40 80H710M40 20H710" stroke="#e5e9df"/><path d="M40 ${y(cfg.headroom)}H710" stroke="#9ba58e" stroke-dasharray="4 4"/><path d="${path(baseline)}" fill="none" stroke="#bdafa0" stroke-width="2.5"/><path d="${path(coordinated)}" fill="none" stroke="#2672c7" stroke-width="3"/><text x="0" y="25" font-size="10" fill="#7a8574">${fmt(max)}</text><text x="40" y="166" font-size="10" fill="#7a8574">Now</text><text x="650" y="166" font-size="10" fill="#7a8574">+${cfg.lead}h</text></svg><div class="small">Blue: coordinated · gray: all-at-once. Both include the same batteries and optional preparation tasks. The gray strategy can exceed available charging headroom.</div>`;
+    `<svg viewBox="0 0 730 175" role="img" aria-label="Uncoordinated versus coordinated charging power"><path d="M40 140H710M40 80H710M40 20H710" stroke="#e5e9df"/><path d="M40 ${y(cfg.headroom)}H710" stroke="#9ba58e" stroke-dasharray="4 4"/><path d="${path(baseline)}" fill="none" stroke="#bdafa0" stroke-width="2.5"/><path d="${path(coordinated)}" fill="none" stroke="#2672c7" stroke-width="3"/><text x="0" y="25" font-size="10" fill="#7a8574">${fmt(max)}</text><text x="40" y="166" font-size="10" fill="#7a8574">Now</text><text x="650" y="166" font-size="10" fill="#7a8574">+${cfg.lead}h</text></svg><div class="small">Blue: charging with the plan. Gray: everyone starts at once. Both include the same tasks. Charging all at once can use more power than is available.</div>`;
 }
 function build() {
   if (!homes.length) {
-    $("banner").textContent = "Load real demand records first.";
+    $("banner").textContent = "Load electricity data first, or choose Run demo.";
     return;
   }
   if (!["duration", "lead", "headroom", "floor"].every((id) => $(id).reportValidity())) return;
@@ -513,7 +513,7 @@ $("approve").onclick = () => {
   const online = plan.homes.filter((h) => h.online),
     unmet = online.filter((h) => !h.budget.targetMet).length;
   $("reviewText").textContent =
-    `${online.length - unmet} known profiles meet the target; ${unmet} have unmet needs; ${homes.length - online.length} are unknown. Proposed load reductions require the recorded simulated resident permissions. Approve for replay?`;
+    `${online.length - unmet} homes have enough backup; ${unmet} need more energy; ${homes.length - online.length} are not reporting. Only energy-saving changes agreed to in this demo are included. Approve this plan for the outage demo?`;
   $("review").showModal();
 };
 $("confirm").onclick = () => {

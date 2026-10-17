@@ -59,7 +59,7 @@
     {
       "id": "harbor-night",
       "name": "Harbor night shift",
-      "summary": "Night berth load and cold-chain demand rise on a constrained feeder.",
+      "summary": "Port lighting and cold storage need more power, while the local power line can supply less.",
       "provenance": "ASSUMED",
       "effects": {
         "shield": { "feederCapacity": 16, "reliefHours": 4 },
@@ -69,7 +69,7 @@
     {
       "id": "heat-wave",
       "name": "Heat wave",
-      "summary": "Cooling allowance +60% and a 48-hour horizon.",
+      "summary": "Homes use 60% more power for cooling. Plan for 48 hours of backup.",
       "provenance": "ASSUMED",
       "evidenceAlert": "Heat Advisory",
       "effects": {
@@ -79,8 +79,8 @@
     },
     {
       "id": "spoofed-telemetry",
-      "name": "Spoofed telemetry",
-      "summary": "Home 3 reports 100% charge with a failed signature; capacity is excluded until verified.",
+      "name": "Suspicious battery readings",
+      "summary": "Home 3 claims a full battery, but its report fails a security check. Leave it out of the plan until checked.",
       "provenance": "ASSUMED",
       "effects": {
         "spoof": [3]
@@ -88,8 +88,8 @@
     },
     {
       "id": "cell-outage",
-      "name": "Cell outage",
-      "summary": "Network B goes dark: homes 2 and 4 stop reporting; cell site has zero grace.",
+      "name": "Cell network outage",
+      "summary": "Homes 2 and 4 lose their connection. Their battery status is unknown, and the cell tower needs power right away.",
       "provenance": "ASSUMED",
       "effects": {
         "silent": [
@@ -105,13 +105,13 @@
       "id": "tuesday",
       "title": "Ordinary Tuesday",
       "seconds": 22,
-      "caption": "Six LA ZIPs, real SCE June-2024 usage. On a normal day the Base Core fleet sells stored energy above each home's protected reserve during the evening peak."
+      "caption": "These six example homes use real June 2024 electricity averages from LA ZIP codes. On a normal day, their batteries can sell spare energy when demand is high, while keeping backup power for each home."
     },
     {
       "id": "dispatcher",
-      "title": "Second customer: utility DR dispatcher",
+      "title": "Helping the local power grid",
       "seconds": 22,
-      "caption": "Same fleet, second buyer. A demand-response dispatcher asks for feeder relief: accepted load deferrals first, battery energy above reserve second, the rest handed back."
+      "caption": "The utility needs homes to draw less power. First, reduce usage where residents agree. Then use spare battery energy. Ask the utility for help with anything the plan cannot cover."
     },
     {
       "id": "fire",
@@ -121,9 +121,9 @@
     },
     {
       "id": "prepare",
-      "title": "Staggered preparation vs 4 PM rush",
+      "title": "Spread out charging before the outage",
       "seconds": 26,
-      "caption": "If everyone plugs in at 4 PM, demand spikes past the feeder's spare capacity. PoweruP staggers charging over 18 hours, most at-risk homes first, inside the shared limit."
+      "caption": "If everyone starts charging at 4 PM, they need more power than is available. PoweruP spreads charging across 18 hours, helping homes with the greatest need first."
     },
     {
       "id": "approve",
@@ -135,7 +135,7 @@
       "id": "outage",
       "title": "Outage hours 0–72",
       "seconds": 24,
-      "caption": "Power goes out at 6 PM. Each home now has a grace-period budget: how many kW it can draw so essential loads last the full 72 hours."
+      "caption": "Power goes out at 6 PM. Each home gets a power-use plan aimed at keeping essential devices running for 72 hours. Homes without enough energy are flagged for help."
     },
     {
       "id": "silent",
@@ -147,7 +147,7 @@
       "id": "handoff",
       "title": "Handoff to the operator",
       "seconds": 22,
-      "caption": "What the fleet cannot cover goes to a human operator, with every decision logged: home shortfalls, silent batteries, and critical loads with no grace period."
+      "caption": "The operator sees who needs help: homes running short of energy, batteries that stopped reporting, and nearby services that cannot wait for power. Every decision is saved in the activity history."
     }
   ],
   "demoSilent": [

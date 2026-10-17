@@ -19,7 +19,7 @@
     }
   </script>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="style.css?v=18" />
+  <link rel="stylesheet" href="style.css?v=19" />
 </head>
 
 <body>
@@ -76,7 +76,7 @@
         <div>
           <div class="eyebrow">OPERATIONS / LOS ANGELES</div>
           <h1>Stay ahead of the outage<span>.</span></h1>
-          <p>Prepare earlier. Keep essential power in reserve.</p>
+          <p>Plan when to charge home batteries and see how long their backup power could last.</p>
         </div>
         <div class="global-actions">
           <button id="jumpNotify">Resident alerts ↓</button><button id="guided" class="primary">Start guided demo
@@ -94,12 +94,12 @@
       <section data-app-view="operations" class="app-view">
         <div class="journey" aria-label="Operating mode">
           <button data-mode="prepare" class="active">
-            <b>01</b> Storm preparation<span>Schedule energy before the outage</span></button><button
+            <b>01</b> Storm preparation<span>Charge batteries before the power goes out</span></button><button
             data-mode="outage">
-            <b>02</b> Outage budget<span>Stretch the energy already stored</span></button><button data-mode="shield">
-            <b>03</b> Neighborhood shield<span>Relieve a modeled feeder constraint</span></button><button
+            <b>02</b> During an outage<span>See how long backup power lasts</span></button><button data-mode="shield">
+            <b>03</b> Help the neighborhood<span>Reduce demand on the local power line</span></button><button
             data-mode="everyday">
-            <b>04</b> Ordinary Tuesday<span>Support the grid above reserves</span>
+            <b>04</b> Everyday savings<span>Sell spare energy while keeping backup power</span>
           </button>
         </div>
         <div class="overview-tools">
@@ -112,66 +112,67 @@
         <div class="workspace">
           <aside class="panel control">
             <div id="visualGauge" class="reserve-gauge"></div>
-            <div class="eyebrow">PLANNING CONSTRAINTS</div>
-            <h2 id="modeTitle">Prepare before disruption.</h2>
+            <div class="eyebrow">YOUR PLAN</div>
+            <h2 id="modeTitle">Get ready before the outage.</h2>
             <p class="small" id="modeDescription">
-              Fleet dispatcher: allocate limited charging headroom while respecting household priorities.
+              Choose how long homes need backup power and how much power is available to charge their batteries.
             </p>
-            <label>Target duration (hours)<input id="duration" type="number" min="0.25" max="168" step="0.25"
-                value="24" /></label><label>Preparation window (hours)<input id="lead" type="number" min="0.25" max="48"
-                step="0.25" value="6" /></label><label>Available charging headroom (kW)<input id="headroom"
-                type="number" min="0" max="10000" step="0.5" value="8" /></label><label>Minimum pre-outage reserve
+            <label>Backup needed (hours)<input id="duration" type="number" min="0.25" max="168" step="0.25"
+                value="24" /></label><label>Time to charge before the outage (hours)<input id="lead" type="number" min="0.25" max="48"
+                step="0.25" value="6" /></label><label>Power available for charging (kW)<input id="headroom"
+                type="number" min="0" max="10000" step="0.5" value="8" /></label><label>Minimum battery charge to aim for
               (%)<input id="floor" type="number" min="0" max="100" value="20" /></label>
             <p class="small">
-              Headroom excludes background load. Reserve percentage is an operator scenario, not a universal
-              Base policy.
+              Enter the extra power available after other electricity use. Charging is shared across the homes.
+              The minimum charge is a setting for this plan.
             </p>
+            <p class="small">kW measures how fast power is used or supplied. kWh measures an amount of energy:
+              using 1 kW for 1 hour uses 1 kWh.</p>
             <button id="plan" class="primary wide" hidden>Recalculate preview</button>
             <div class="auto-calc-note">
               <span class="connection-dot"></span> Calculations update automatically
             </div>
-            <button id="approve" class="wide" disabled>Review &amp; approve</button><button id="stress" class="wide">LA
-              historical stress test · 43 h</button>
+            <button id="approve" class="wide" disabled>Review &amp; approve</button><button id="stress" class="wide">Try a past LA
+              outage · 43 hours</button>
             <div id="outageControls" hidden>
               <hr />
               <button id="startOutage" class="primary wide">Start outage simulation</button><button id="advance"
-                class="wide" disabled>Advance 1 hour →</button><button id="finish" class="wide" disabled>Advance to
-                target</button>
+                class="wide" disabled>Advance 1 hour →</button><button id="finish" class="wide" disabled>Skip to
+                the end</button>
               <p class="small">
-                Uses approved projected charge if available. This is a local simulator; no physical
-                equipment is controlled.
+                The demo starts with the planned battery charge if you approved it. Otherwise it uses the starting
+                charge. No real equipment is controlled.
               </p>
             </div>
             <div id="shieldControls" hidden>
               <hr />
-              <label>Scenario feeder capacity (kW)<input id="feederCapacity" type="number" min="0" max="10000" step="1"
-                  value="20" /></label><label>Support event duration (hours)<input id="reliefHours" type="number"
+              <label>Local power line limit (kW)<input id="feederCapacity" type="number" min="0" max="10000" step="1"
+                  value="20" /></label><label>How long support is needed (hours)<input id="reliefHours" type="number"
                   min="0.25" max="24" step="0.25" value="2" /></label>
               <p class="small">
-                External loads below are hypothetical neighbors, not controlled equipment or actual LA port
-                demand.
+                These settings represent example nearby services and how much power they need.
               </p>
-              <label>Cold-store demand (kW)<input id="coldKw" type="number" min="0" max="1000" step="0.5"
-                  value="8" /></label><label>Communications demand (kW)<input id="commsKw" type="number" min="0"
-                  max="1000" step="0.5" value="3" /></label><label>Port/security demand (kW)<input id="portKw"
+              <label>Cold storage power use (kW)<input id="coldKw" type="number" min="0" max="1000" step="0.5"
+                  value="8" /></label><label>Cell tower power use (kW)<input id="commsKw" type="number" min="0"
+                  max="1000" step="0.5" value="3" /></label><label>Port lighting and security power use (kW)<input id="portKw"
                   type="number" min="0" max="1000" step="0.5" value="6" /></label><button id="shieldTwist"
-                class="wide">Twist: capacity drops 25%</button>
+                class="wide">Try a 25% drop in the power line limit</button>
               <p class="small">
-                This is a single-bus feasibility scenario, not validated power flow. During an actual grid
-                shutoff, isolated home batteries cannot supply these neighbors.
+                While the grid is on, home batteries can reduce demand on the local power line. During a shutoff,
+                they cannot send power to these nearby services. This is a simplified estimate.
               </p>
             </div>
             <div id="priceControls" hidden>
               <hr />
-              <label>Assumed recharge price ($/kWh)<input id="buy" type="number" min="0" max="10" step="0.01"
-                  value="0.15" /></label><label>Assumed export credit ($/kWh)<input id="sell" type="number" min="0"
-                  max="10" step="0.01" value="0.40" /></label><label>Ordinary-day reserve target (hours)<input
+              <label>Cost to recharge ($/kWh)<input id="buy" type="number" min="0" max="10" step="0.01"
+                  value="0.15" /></label><label>Payment for energy sold ($/kWh)<input id="sell" type="number" min="0"
+                  max="10" step="0.01" value="0.40" /></label><label>Backup hours to keep<input
                   id="dailyReserve" type="number" min="0.25" max="168" step="0.25"
-                  value="6" /></label><label>Grid-support event (hours)<input id="eventHours" type="number" min="0.25"
+                  value="6" /></label><label>Time selling spare energy (hours)<input id="eventHours" type="number" min="0.25"
                   max="24" step="0.25" value="2" /></label>
               <p class="small">
-                Illustrative prices, not SCE tariffs. Contribution excludes fees, wear, household
-                consumption during the event, and market eligibility. No export-rate limit is verified.
+                Prices are examples. The estimate subtracts recharge costs from energy sale payments. It does not
+                include fees, battery wear, or the home's power use during the sale. Actual utility rules may differ.
               </p>
             </div>
           </aside>
@@ -181,17 +182,17 @@
             <div class="panel">
               <div class="panelhead">
                 <div>
-                  <h2 id="fleetTitle">ZIP profile readiness</h2>
+                  <h2 id="fleetTitle">Backup by ZIP code</h2>
                   <div class="small">
-                    One representative battery per ZIP average · not an actual enrolled household or
-                    ZIP-wide backup
+                    Each example home uses its ZIP code's average electricity use. Batteries and home settings
+                    are simulated.
                   </div>
                 </div>
-                <label class="toggle"><input id="projected" type="checkbox" /> Use projected preparation energy</label>
+                <label class="toggle"><input id="projected" type="checkbox" /> Show charge after the plan</label>
               </div>
               <div id="map"></div>
               <div class="legend">
-                <i class="dot green"></i>Target met <i class="dot orange"></i>Shortfall
+                <i class="dot green"></i>Enough backup <i class="dot orange"></i>Needs more energy
                 <i class="dot gray"></i>Unknown
               </div>
             </div>
@@ -205,7 +206,7 @@
           </section>
           <aside class="detail panel">
             <div class="panelhead">
-              <h2 id="selectedName">Profile detail</h2>
+              <h2 id="selectedName">Home details</h2>
               <span id="selectedStatus" class="status"></span>
             </div>
             <div id="detail"></div>
@@ -213,23 +214,23 @@
         </div>
         <details class="advanced-disclosure">
           <summary>
-            Decision trail, response ladder & model evidence
-            <span>Explore the reasoning behind each action ↗</span>
+            How the plan works &amp; activity history
+            <span>See the steps, data and assumptions ↗</span>
           </summary>
           <section class="panel" style="margin-top: 20px">
             <div class="panelhead">
               <div>
                 <h2>Watch → ask → slow → hold → hand off</h2>
-                <div class="small">Action ladder with evidence, permission and an operator handoff</div>
+                <div class="small">Check the risk, ask residents, save energy, keep backup, and call for help</div>
               </div>
-              <button id="simulatePeerLoss">Twist: shared network loss</button>
+              <button id="simulatePeerLoss">Simulate a network outage</button>
             </div>
             <div id="ladder" class="ladder"></div>
           </section>
           <div class="bottom">
             <section class="panel">
               <div class="panelhead">
-                <h2>Decision trail</h2>
+                <h2>Activity history</h2>
                 <span class="small">Simulated requests &amp; approvals</span>
               </div>
               <div id="log" aria-live="polite"></div>
@@ -298,28 +299,28 @@
           <div class="panelhead">
             <div>
               <div class="eyebrow">PUBLIC DATA / NO UTILITY ACCOUNT REQUIRED</div>
-              <h2 id="sceTitle">Real LA-area demand benchmarks.</h2>
+              <h2 id="sceTitle">Electricity use in your area.</h2>
               <p class="small">
-                SCE monthly residential ZIP averages, delivered through ORNL OpenEnergy Hub. Historical
-                aggregates, not individual home readings.
+                Past monthly electricity use from Southern California Edison (SCE), averaged by ZIP code.
+                These records come from ORNL OpenEnergy Hub and do not identify individual homes.
               </p>
             </div>
           </div>
           <div class="padding">
             <div class="inline">
               <label style="flex: 1">ZIP codes (up to six, separated by commas)<input id="sceZips" type="text"
-                  value="90002,90008,90022,90040,90045,90046" /></label><button id="loadSce" class="primary">Load SCE
-                API ↻</button><button id="offlineData">Open saved SCE snapshot</button><button id="applySce"
-                disabled>Apply ZIP scenarios →</button>
+                  value="90002,90008,90022,90040,90045,90046" /></label><button id="loadSce" class="primary">Load electricity
+                data ↻</button><button id="offlineData">Use saved electricity data</button><button id="applySce"
+                disabled>Use these ZIP codes →</button>
             </div>
             <p id="sceStatus" class="small" role="status">
-              Not loaded. Load public records to populate the planner with ZIP usage scenarios.
+              Choose ZIP codes and load their electricity data to start planning.
             </p>
             <div id="sceRecords" class="sce-records"></div>
             <p class="small">
-              Monthly kWh ÷ calendar days ÷ 24 gives an average kW benchmark. Hourly behavior, appliance
-              shares, battery charge and priorities remain assumptions. ZIPs may span utility territories;
-              these records describe SCE accounts only. A ZIP code does not establish feeder membership.
+              We turn monthly electricity use into an average for the example home. You set its battery charge,
+              appliance use and priority. These records cover SCE customers; homes in the same ZIP code may
+              be on different power lines.
             </p>
           </div>
         </section>
@@ -330,12 +331,12 @@
             </summary>
             <div class="toolgrid">
               <section>
-                <h3>Measured household profiles</h3>
+                <h3>Household electricity records</h3>
                 <p class="small">
-                  OPSD provides six historical German residential grid-import profiles. They are demand
-                  proxies, not LA measurements or battery telemetry.
+                  Open Power System Data (OPSD) provides past electricity readings from six German homes.
+                  You can use them to try the planner with measured usage.
                 </p>
-                <button id="loadData">Load six measured profiles</button>
+                <button id="loadData">Load six household records</button>
                 <button id="importButton">Import profile JSON</button>
                 <button id="uploadCsv">Load downloaded OPSD CSV</button><input id="rawCsvFile" type="file"
                   accept=".csv,text/csv" hidden />
@@ -354,7 +355,7 @@
                 </div>
                 <div id="readiness" class="readiness">Weather not assessed</div>
                 <p id="weatherStatus" class="small" role="status">
-                  Not loaded. Weather informs a review; it is not a confirmed shutoff.
+                  Load weather to check for warnings. A warning does not confirm that power will be shut off.
                 </p>
                 <div id="alerts"></div>
               </section>
@@ -367,7 +368,7 @@
           <div>
             <div class="eyebrow">OUTREACH / PREPARATION WINDOW</div>
             <h2>Get people ready, too.</h2>
-            <p>ZIP-targeted preparation alerts and reminders, with a simulated delivery timeline.</p>
+            <p>Try sending preparation reminders to example residents in a ZIP code.</p>
           </div>
           <button data-view="operations">Back to operations ↗</button>
         </div>
@@ -385,7 +386,7 @@
           </div>
           <div class="notify-grid padding">
             <div>
-              <h3>1 · Resident enrollment</h3>
+              <h3>1 · Add residents</h3>
               <p class="small">
                 Try fictional contacts first. Contact details stay in this browser session; no provider
                 receives them.
@@ -399,12 +400,12 @@
                   </select></label><label>Phone or email<input id="contactDestination" type="text" maxlength="120"
                     placeholder="+12135550101" /></label>
               </div>
-              <label class="toggle"><input id="contactOptin" type="checkbox" /> Simulate resident opt-in to
-                reminders</label><button id="addNotifyContact">Add test subscriber</button>
+              <label class="toggle"><input id="contactOptin" type="checkbox" /> Resident agrees to receive
+                reminders (demo)</label><button id="addNotifyContact">Add test subscriber</button>
               <div id="notifyContacts" class="subscribers"></div>
             </div>
             <div>
-              <h3>2 · Dispatcher readiness message</h3>
+              <h3>2 · Write a preparation alert</h3>
               <div class="fields">
                 <label>Target home ZIP<input id="notifyZip" type="text" inputmode="numeric" maxlength="5"
                     value="90002" /></label><label>Readiness level<select id="notifyLevel">
@@ -414,14 +415,13 @@
                   </select></label>
               </div>
               <label>Expected shutoff start · your browser's local time<input id="notifyExpected"
-                  type="datetime-local" /></label><label>Timing evidence<select id="notifyEvidence">
+                  type="datetime-local" /></label><label>Where the timing comes from<select id="notifyEvidence">
                   <option value="scenario">Scenario estimate · unconfirmed</option>
                   <option value="notice">Simulated utility notice</option>
                 </select></label>
               <p class="small">
-                Operator-selected readiness, not a computed outage probability. NWS warnings and SCE monthly
-                usage do not establish a PSPS schedule. Utilities control shutoffs; residents receive
-                preparation reminders.
+                You choose the alert level and expected time. Only the utility can confirm a shutoff;
+                weather warnings alone do not tell us when power will go out.
               </p>
               <p id="notifyAudience" class="small"></p>
               <button id="reviewNotify" class="primary wide">Review preparation alert →</button>
@@ -433,7 +433,7 @@
               <h3>3 · Reminder timeline</h3>
               <div id="notifyClock" class="readiness"></div>
               <p class="small">
-                After review: alert now, preparation reminder one hour before, EV / manual-load reminder 15
+                After review: alert now, preparation reminder one hour before, car charging and appliance reminder 15
                 minutes before. Reminders already in the past are omitted.
               </p>
               <button id="advanceNotify">Advance 30 min</button>
@@ -467,7 +467,7 @@
     <h2>Approve this simulated plan?</h2>
     <p id="reviewText"></p>
     <p class="small">
-      Approval stores a scenario plan only. It sends no battery commands. Unresolved homes remain visible.
+      Approval saves the plan for this demo. Homes that still need help remain flagged. No real battery is controlled.
     </p>
     <button id="confirm" class="primary">Approve simulated plan</button> <button id="cancel">Cancel</button>
   </dialog>
@@ -483,17 +483,17 @@
   </dialog>
 
   <script src="static-api.js?v=17"></script>
-  <script src="scene.js?v=17"></script>
-  <script src="engine.js?v=17"></script>
+  <script src="scene.js?v=19"></script>
+  <script src="engine.js?v=19"></script>
   <script src="advanced.js?v=17"></script>
-  <script src="demo-model.js?v=17"></script>
-  <script src="app.js?v=17"></script>
-  <script src="experience.js?v=17"></script>
-  <script src="sce.js?v=17"></script>
+  <script src="demo-model.js?v=19"></script>
+  <script src="app.js?v=19"></script>
+  <script src="experience.js?v=19"></script>
+  <script src="sce.js?v=19"></script>
   <script src="notifications.js?v=17"></script>
-  <script src="visual.js?v=17"></script>
-  <script src="demo.js?v=18"></script>
-  <script src="ui.js?v=16"></script>
+  <script src="visual.js?v=19"></script>
+  <script src="demo.js?v=19"></script>
+  <script src="ui.js?v=19"></script>
 </body>
 
 </html>

@@ -37,7 +37,7 @@
       loads: [
         {
           id: "essential",
-          name: "Essential household loads",
+          name: "Essential devices",
           kw: mean * 0.3,
           reduction: 0,
           consent: "required",
@@ -45,7 +45,7 @@
         },
         {
           id: "cooling",
-          name: "Cooling / heating allowance",
+          name: "Heating and cooling",
           kw: mean * 0.45,
           reduction: 0.5,
           consent: "unasked",
@@ -53,7 +53,7 @@
         },
         {
           id: "ev",
-          name: "Flexible charging allowance",
+          name: "Optional charging",
           kw: mean * 0.15,
           reduction: 1,
           consent: "unasked",
@@ -61,7 +61,7 @@
         },
         {
           id: "other",
-          name: "Other discretionary allowance",
+          name: "Other optional uses",
           kw: mean * 0.1,
           reduction: 1,
           consent: "unasked",
