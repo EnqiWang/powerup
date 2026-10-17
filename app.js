@@ -8,6 +8,11 @@ const safe = (s) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
 function labelProfile(h) {
+  // Scenario fleets (demo-model.js buildFleet) carry their own circuit/site names.
+  if (h.fixedName) {
+    h.name = h.fixedName;
+    return h;
+  }
   const m = h.measurement;
   const zip =
     m?.kind === "zip-benchmark"

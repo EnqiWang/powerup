@@ -1,0 +1,30 @@
+{
+  "schema": "powerup.funding.v1",
+  "note": "Program facts as researched by the team; verify current solicitations before applying. Pilot sizes are ASSUMED. Scaled numbers are a linear scale-up of the app's own 6-home model, not forecasts.",
+  "programs": [
+    {
+      "id": "doe-sbir",
+      "role": "Primary",
+      "name": "DOE SBIR/STTR",
+      "detail": "Reauthorized April 2026 through 2031. Fit: grid resilience and distributed energy resources.",
+      "provenance": "Team research (verify)",
+      "phases": [
+        { "phase": "Phase I", "goal": "500-home SCE pilot on PSPS-prone circuits", "homes": 500, "metrics": ["kept", "backup"] },
+        { "phase": "Phase II", "goal": "5,000 homes across multiple circuits, utility DR integration", "homes": 5000, "metrics": ["medical", "headroom"] },
+        { "phase": "Phase III", "goal": "Utility / aggregator contracts: peak relief on ordinary days", "homes": 5000, "metrics": ["value"] }
+      ]
+    },
+    {
+      "id": "dod-sbir",
+      "role": "Alternative",
+      "name": "DoD SBIR (AFWERX or Army)",
+      "detail": "Fit: keeping military base housing powered through grid outages.",
+      "provenance": "Team research (verify)",
+      "phases": [
+        { "phase": "Phase I", "goal": "Feasibility on one base-housing block", "homes": 50, "metrics": ["kept", "backup"] },
+        { "phase": "Phase II", "goal": "Prototype across one installation's housing", "homes": 500, "metrics": ["medical", "headroom"] },
+        { "phase": "Phase III", "goal": "Transition to installation energy-resilience programs", "homes": 500, "metrics": ["value"] }
+      ]
+    }
+  ]
+}

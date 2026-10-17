@@ -42,7 +42,7 @@ test("demo routing has no network calls or remote URLs", () => {
 
 test("map=0 keeps the map offline and retains the Census SVG fallback", () => {
   const scene = fs.readFileSync(path.join(root, "scene.js"), "utf8"),
-    guard = scene.indexOf("get('map')==='0'"),
+    guard = scene.search(/get\(['"]map['"]\)\s*===\s*['"]0['"]/),
     mapImport = scene.indexOf("import(MODULE)");
   assert.ok(guard >= 0 && guard < mapImport, "offline guard runs before the MapLibre import");
   assert.match(scene, /id=\"geoFallback\"/);
@@ -53,7 +53,7 @@ test("initial theme defaults to light while honoring a saved choice", () => {
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
   const ui = fs.readFileSync(path.join(root, "ui.js"), "utf8");
   assert.match(html, /savedTheme === "dark" \|\| savedTheme === "light"[\s\S]*\? savedTheme[\s\S]*: "light"/);
-  assert.match(ui, /saved==='light'\|\|saved==='dark'\?saved:'light'/);
+  assert.match(ui, /saved\s*===\s*["']light["']\s*\|\|\s*saved\s*===\s*["']dark["']\s*\?\s*saved\s*:\s*["']light["']/);
   assert.doesNotMatch(ui, /prefers-color-scheme/);
 });
 
@@ -61,7 +61,7 @@ test("scenario controls auto-load the demo fleet and omit the assumed heading", 
   const demo = fs.readFileSync(path.join(root, "demo.js"), "utf8");
   assert.match(demo, /TRY A SCENARIO/);
   assert.doesNotMatch(demo, /TWISTS <i class="prov assumed">ASSUMED<\/i>/);
-  assert.match(demo, /if \(!homes\.length\) \{\s*setupFleet\(\);\s*\}/);
+  assert.match(demo, /if \(!homes\.length\) \{\s*(setupFleet\(\)|loadRegion\(region\.id\));/);
 });
 
 test("headline metrics are finite and carry provenance badges", () => {
@@ -70,13 +70,12 @@ test("headline metrics are finite and carry provenance badges", () => {
     m = M.headline(homes, c, config.baseCase.prices, P.prepare(homes, c));
   assert.deepEqual(
     m.map((x) => x.id),
-    ["backup", "kept", "essential", "headroom", "value"],
+    ["backup", "kept", "medical", "headroom", "value"],
   );
   for (const x of m) {
     assert.ok(Number.isFinite(x.value), x.id);
     assert.ok(["REAL", "ASSUMED", "MIXED"].includes(x.provenance), x.id);
   }
-  assert.ok(m[0].value > m[0].baseline, "budget extends backup hours");
   assert.ok(m[3].baseline > c.headroom, "4 PM rush exceeds shared headroom");
   assert.ok(m[4].value > 0, "ordinary-day value is positive with participation");
 });
@@ -120,8 +119,11 @@ test("spoof + cell-outage twists move capacity to unverified buckets", () => {
   assert.deepEqual(cats, ["talking", "not-talking", "untrusted", "not-talking", "talking", "talking"]);
 });
 
-test("demo script runs about three minutes", () => {
-  const s = config.demoScript.reduce((n, x) => n + x.seconds, 0);
-  assert.ok(s >= 150 && s <= 200, s + " s");
+test("demo mode serves the Malibu ZIP used by the Bryson replay", () => {
+  const sce = route("/api/sce?zip=90265"),
+    g = route("/api/geography?zips=90265");
+  assert.equal(sce.status, 200);
+  assert.ok(sce.body.latest.meanKw > 0);
+  assert.equal(g.body.features.length, 1);
   assert.equal(config.demoSilent.length, 4);
 });

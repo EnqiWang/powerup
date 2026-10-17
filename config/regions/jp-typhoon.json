@@ -1,0 +1,246 @@
+{
+  "schema": "powerup.region.v1",
+  "id": "jp-typhoon",
+  "name": "Japan · typhoon",
+  "provenance": "SYNTHETIC",
+  "provenanceNote": "SYNTHETIC: every load, event and price here is illustrative. Only the named hazard-rating system is real. Same engine, different config.",
+  "hazardFeed": {
+    "name": "Japan Meteorological Agency typhoon information",
+    "levels": [
+      "Advisory",
+      "Warning",
+      "Emergency Warning"
+    ],
+    "provenance": "REAL system name; SYNTHETIC readings"
+  },
+  "shutoffRules": {
+    "name": "Wind-damage outages and staged restoration (SYNTHETIC rule)",
+    "summary": "No pre-emptive shutoff; outages come from line damage and restoration is staged.",
+    "provenance": "SYNTHETIC"
+  },
+  "units": {
+    "temperature": "°C",
+    "energy": "kWh",
+    "power": "kW"
+  },
+  "currency": {
+    "code": "JPY",
+    "symbol": "¥",
+    "buy": 30,
+    "sell": 45,
+    "provenance": "SYNTHETIC",
+    "engineScale": 100,
+    "note": "Engine works in units of 100 JPY per kWh (engine price limit); display multiplies back."
+  },
+  "medicalLabel": "Medical-priority homes protected",
+  "siteLabel": "home",
+  "criticalLoads": [
+    {
+      "id": "cold",
+      "inputId": "coldKw",
+      "name": "Pharmacy cold chain (synthetic)",
+      "kw": 5,
+      "graceHours": 1,
+      "provenance": "SYNTHETIC"
+    },
+    {
+      "id": "cell",
+      "inputId": "commsKw",
+      "name": "Mobile base station (synthetic)",
+      "kw": 3,
+      "graceHours": 0,
+      "provenance": "SYNTHETIC"
+    },
+    {
+      "id": "port",
+      "inputId": "portKw",
+      "name": "Shelter, school gym (synthetic)",
+      "kw": 8,
+      "graceHours": 0,
+      "provenance": "SYNTHETIC"
+    }
+  ],
+  "scenario": {
+    "schema": "powerup.scenario.v1",
+    "id": "jp-typhoon-synthetic",
+    "region": "jp-typhoon",
+    "title": "Japan · typhoon · synthetic replay",
+    "pitch": "One engine, any region.",
+    "provenance": "SYNTHETIC",
+    "sourceNote": "SYNTHETIC scenario to show the same engine on new config. Not a real event.",
+    "zip": null,
+    "fleet": {
+      "provenance": "SYNTHETIC",
+      "homes": [
+        {
+          "name": "Coastal home A",
+          "meanKw": 0.6,
+          "startSoc": 0.5,
+          "medicalBaseline": true
+        },
+        {
+          "name": "Coastal home B",
+          "meanKw": 0.5,
+          "startSoc": 0.4,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Coastal home C",
+          "meanKw": 0.8,
+          "startSoc": 0.3,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Coastal home D",
+          "meanKw": 0.7,
+          "startSoc": 0.55,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Coastal home E",
+          "meanKw": 0.4,
+          "startSoc": 0.6,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Coastal home F",
+          "meanKw": 0.6,
+          "startSoc": 0.35,
+          "medicalBaseline": true
+        }
+      ]
+    },
+    "cfg": {
+      "duration": 72,
+      "lead": 18,
+      "headroom": 6,
+      "floor": 0.2
+    },
+    "prices": {
+      "buy": 30,
+      "sell": 45,
+      "eventHours": 2,
+      "dailyReserve": 6
+    },
+    "recharge": {
+      "lead": 8,
+      "headroom": 6
+    },
+    "events": [
+      {
+        "id": "jp-1",
+        "at": null,
+        "when": "Day −3",
+        "label": "Day −3: Typhoon track forecast",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "WATCH",
+          "action": "Flag exposed coastal feeders; check battery heartbeats.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "jp-2",
+        "at": null,
+        "when": "Day −1",
+        "label": "Day −1: Storm warning",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "ASK",
+          "action": "Message residents; get medical-priority consent to hold 100%.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "jp-3",
+        "at": null,
+        "when": "Day −1 evening",
+        "label": "Day −1 evening: Emergency warning",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "FILL",
+          "action": "Staggered charging, medical homes first.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "jp-4",
+        "at": null,
+        "when": "Day 0",
+        "label": "Day 0: Lines down",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "HOLD",
+          "action": "Homes island with hours budgets.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "jp-5",
+        "at": null,
+        "when": "Day +2",
+        "label": "Day +2: Staged restoration",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "HAND OFF",
+          "action": "Propose a staggered recharge for the utility to approve.",
+          "provenance": "INFERRED"
+        }
+      }
+    ],
+    "demo": [
+      {
+        "id": "tuesday",
+        "title": "Ordinary day",
+        "seconds": 18,
+        "caption": "Normal day: the fleet earns peak relief from energy above each reserve (synthetic prices)."
+      },
+      {
+        "id": "watch",
+        "event": "jp-1",
+        "title": "Day −3: Typhoon track forecast",
+        "seconds": 18,
+        "caption": "Flag exposed coastal feeders; check battery heartbeats."
+      },
+      {
+        "id": "ask",
+        "event": "jp-2",
+        "title": "Day −1: Storm warning",
+        "seconds": 18,
+        "caption": "Message residents; get medical-priority consent to hold 100%."
+      },
+      {
+        "id": "fill",
+        "event": "jp-3",
+        "title": "Day −1 evening: Emergency warning",
+        "seconds": 18,
+        "caption": "Staggered charging, medical homes first."
+      },
+      {
+        "id": "hold",
+        "event": "jp-4",
+        "title": "Day 0: Lines down",
+        "seconds": 18,
+        "caption": "Homes island with hours budgets."
+      },
+      {
+        "id": "silent",
+        "title": "Night: network loss",
+        "seconds": 18,
+        "caption": "Four batteries go quiet and keep their local rule; classified not talking / tripped / broken."
+      },
+      {
+        "id": "handoff",
+        "event": "jp-5",
+        "title": "Day +2: Staged restoration",
+        "seconds": 18,
+        "caption": "Propose a staggered recharge for the utility to approve."
+      }
+    ]
+  }
+}

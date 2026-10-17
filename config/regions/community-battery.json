@@ -1,0 +1,247 @@
+{
+  "schema": "powerup.region.v1",
+  "id": "community-battery",
+  "name": "Community battery · clinics & cell towers",
+  "provenance": "SYNTHETIC",
+  "provenanceNote": "SYNTHETIC: every load, event and price here is illustrative. Only the named hazard-rating system is real. Same engine, different config.",
+  "hazardFeed": {
+    "name": "National hazard alerts (generic)",
+    "levels": [
+      "Watch",
+      "Warning",
+      "Emergency"
+    ],
+    "provenance": "REAL system name; SYNTHETIC readings"
+  },
+  "shutoffRules": {
+    "name": "Grid outage where homes have no batteries (SYNTHETIC rule)",
+    "summary": "Shared batteries at critical sites instead of homes; same budget logic per site.",
+    "provenance": "SYNTHETIC"
+  },
+  "units": {
+    "temperature": "°C",
+    "energy": "kWh",
+    "power": "kW"
+  },
+  "currency": {
+    "code": "USD",
+    "symbol": "$",
+    "buy": 0.2,
+    "sell": 0.3,
+    "provenance": "SYNTHETIC"
+  },
+  "medicalLabel": "Clinic & tower sites protected",
+  "siteLabel": "site",
+  "criticalLoads": [
+    {
+      "id": "cold",
+      "inputId": "coldKw",
+      "name": "Vaccine cold room (synthetic)",
+      "kw": 4,
+      "graceHours": 1,
+      "provenance": "SYNTHETIC"
+    },
+    {
+      "id": "cell",
+      "inputId": "commsKw",
+      "name": "Cell tower (synthetic)",
+      "kw": 3,
+      "graceHours": 0,
+      "provenance": "SYNTHETIC"
+    },
+    {
+      "id": "port",
+      "inputId": "portKw",
+      "name": "Water pump (synthetic)",
+      "kw": 5,
+      "graceHours": 0,
+      "provenance": "SYNTHETIC"
+    }
+  ],
+  "scenario": {
+    "schema": "powerup.scenario.v1",
+    "id": "community-battery-synthetic",
+    "region": "community-battery",
+    "title": "Community battery · clinics & cell towers · synthetic replay",
+    "pitch": "One engine, any region.",
+    "provenance": "SYNTHETIC",
+    "sourceNote": "SYNTHETIC scenario to show the same engine on new config. Not a real event.",
+    "zip": null,
+    "fleet": {
+      "provenance": "SYNTHETIC",
+      "capacityKwh": 200,
+      "rateKw": 10,
+      "capacityNote": "SYNTHETIC 200 kWh community battery per site; not a Base product spec.",
+      "homes": [
+        {
+          "name": "Health clinic",
+          "meanKw": 3.0,
+          "startSoc": 0.5,
+          "medicalBaseline": true
+        },
+        {
+          "name": "Cell tower",
+          "meanKw": 2.0,
+          "startSoc": 0.6,
+          "medicalBaseline": true
+        },
+        {
+          "name": "Water pump station",
+          "meanKw": 2.5,
+          "startSoc": 0.4,
+          "medicalBaseline": false
+        },
+        {
+          "name": "School shelter",
+          "meanKw": 3.5,
+          "startSoc": 0.3,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Market cold store",
+          "meanKw": 2.2,
+          "startSoc": 0.45,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Community centre",
+          "meanKw": 1.5,
+          "startSoc": 0.55,
+          "medicalBaseline": false
+        }
+      ]
+    },
+    "cfg": {
+      "duration": 72,
+      "lead": 24,
+      "headroom": 20,
+      "floor": 0.2
+    },
+    "prices": {
+      "buy": 0.2,
+      "sell": 0.3,
+      "eventHours": 2,
+      "dailyReserve": 6
+    },
+    "recharge": {
+      "lead": 8,
+      "headroom": 20
+    },
+    "events": [
+      {
+        "id": "cb-1",
+        "at": null,
+        "when": "Day −3",
+        "label": "Day −3: Storm watch",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "WATCH",
+          "action": "Check which site batteries report in.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "cb-2",
+        "at": null,
+        "when": "Day −1",
+        "label": "Day −1: Warning",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "ASK",
+          "action": "Confirm site priorities with clinic and tower operators.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "cb-3",
+        "at": null,
+        "when": "Day −1",
+        "label": "Day −1: Prepare",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "FILL",
+          "action": "Staggered charging, clinic and tower first.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "cb-4",
+        "at": null,
+        "when": "Day 0",
+        "label": "Day 0: Grid down",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "HOLD",
+          "action": "Each site gets an hours budget.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "cb-5",
+        "at": null,
+        "when": "Day +3",
+        "label": "Day +3: Grid back",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "HAND OFF",
+          "action": "Propose a staggered recharge to the utility.",
+          "provenance": "INFERRED"
+        }
+      }
+    ],
+    "demo": [
+      {
+        "id": "tuesday",
+        "title": "Ordinary day",
+        "seconds": 18,
+        "caption": "Normal day: the fleet earns peak relief from energy above each reserve (synthetic prices)."
+      },
+      {
+        "id": "watch",
+        "event": "cb-1",
+        "title": "Day −3: Storm watch",
+        "seconds": 18,
+        "caption": "Check which site batteries report in."
+      },
+      {
+        "id": "ask",
+        "event": "cb-2",
+        "title": "Day −1: Warning",
+        "seconds": 18,
+        "caption": "Confirm site priorities with clinic and tower operators."
+      },
+      {
+        "id": "fill",
+        "event": "cb-3",
+        "title": "Day −1: Prepare",
+        "seconds": 18,
+        "caption": "Staggered charging, clinic and tower first."
+      },
+      {
+        "id": "hold",
+        "event": "cb-4",
+        "title": "Day 0: Grid down",
+        "seconds": 18,
+        "caption": "Each site gets an hours budget."
+      },
+      {
+        "id": "silent",
+        "title": "Night: network loss",
+        "seconds": 18,
+        "caption": "Four batteries go quiet and keep their local rule; classified not talking / tripped / broken."
+      },
+      {
+        "id": "handoff",
+        "event": "cb-5",
+        "title": "Day +3: Grid back",
+        "seconds": 18,
+        "caption": "Propose a staggered recharge to the utility."
+      }
+    ]
+  }
+}

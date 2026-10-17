@@ -1,0 +1,245 @@
+{
+  "schema": "powerup.region.v1",
+  "id": "au-bushfire",
+  "name": "Australia · bushfire",
+  "provenance": "SYNTHETIC",
+  "provenanceNote": "SYNTHETIC: every load, event and price here is illustrative. Only the named hazard-rating system is real. Same engine, different config.",
+  "hazardFeed": {
+    "name": "Bureau of Meteorology / Australian Fire Danger Rating System",
+    "levels": [
+      "Moderate",
+      "High",
+      "Extreme",
+      "Catastrophic"
+    ],
+    "provenance": "REAL system name; SYNTHETIC readings"
+  },
+  "shutoffRules": {
+    "name": "Feeder de-energisation on Catastrophic fire-danger days (SYNTHETIC rule)",
+    "summary": "Distributor may switch off bushfire-risk feeders on Catastrophic days.",
+    "provenance": "SYNTHETIC"
+  },
+  "units": {
+    "temperature": "°C",
+    "energy": "kWh",
+    "power": "kW"
+  },
+  "currency": {
+    "code": "AUD",
+    "symbol": "A$",
+    "buy": 0.3,
+    "sell": 0.6,
+    "provenance": "SYNTHETIC"
+  },
+  "medicalLabel": "Medical-priority homes protected",
+  "siteLabel": "home",
+  "criticalLoads": [
+    {
+      "id": "cold",
+      "inputId": "coldKw",
+      "name": "Town water pump (synthetic)",
+      "kw": 6,
+      "graceHours": 1,
+      "provenance": "SYNTHETIC"
+    },
+    {
+      "id": "cell",
+      "inputId": "commsKw",
+      "name": "Mobile tower (synthetic)",
+      "kw": 3,
+      "graceHours": 0,
+      "provenance": "SYNTHETIC"
+    },
+    {
+      "id": "port",
+      "inputId": "portKw",
+      "name": "Evacuation centre (synthetic)",
+      "kw": 10,
+      "graceHours": 0,
+      "provenance": "SYNTHETIC"
+    }
+  ],
+  "scenario": {
+    "schema": "powerup.scenario.v1",
+    "id": "au-bushfire-synthetic",
+    "region": "au-bushfire",
+    "title": "Australia · bushfire · synthetic replay",
+    "pitch": "One engine, any region.",
+    "provenance": "SYNTHETIC",
+    "sourceNote": "SYNTHETIC scenario to show the same engine on new config. Not a real event.",
+    "zip": null,
+    "fleet": {
+      "provenance": "SYNTHETIC",
+      "homes": [
+        {
+          "name": "Rural home A",
+          "meanKw": 0.9,
+          "startSoc": 0.4,
+          "medicalBaseline": true
+        },
+        {
+          "name": "Rural home B",
+          "meanKw": 1.1,
+          "startSoc": 0.5,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Rural home C",
+          "meanKw": 0.7,
+          "startSoc": 0.3,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Rural home D",
+          "meanKw": 1.3,
+          "startSoc": 0.6,
+          "medicalBaseline": false
+        },
+        {
+          "name": "Rural home E",
+          "meanKw": 0.8,
+          "startSoc": 0.35,
+          "medicalBaseline": true
+        },
+        {
+          "name": "Rural home F",
+          "meanKw": 1.0,
+          "startSoc": 0.45,
+          "medicalBaseline": false
+        }
+      ]
+    },
+    "cfg": {
+      "duration": 48,
+      "lead": 24,
+      "headroom": 8,
+      "floor": 0.2
+    },
+    "prices": {
+      "buy": 0.3,
+      "sell": 0.6,
+      "eventHours": 2,
+      "dailyReserve": 6
+    },
+    "recharge": {
+      "lead": 8,
+      "headroom": 8
+    },
+    "events": [
+      {
+        "id": "au-1",
+        "at": null,
+        "when": "Day −4",
+        "label": "Day −4: Extreme rating forecast",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "WATCH",
+          "action": "Flag bushfire-risk feeders; check which batteries report in.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "au-2",
+        "at": null,
+        "when": "Day −2",
+        "label": "Day −2: Catastrophic forecast, distributor warns of switch-off",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "ASK",
+          "action": "Message residents; get medical-priority consent to hold 100%.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "au-3",
+        "at": null,
+        "when": "Day −1",
+        "label": "Day −1: Total fire ban",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "FILL",
+          "action": "Staggered charging inside feeder headroom, medical homes first.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "au-4",
+        "at": null,
+        "when": "Day 0",
+        "label": "Day 0: Feeder switched off",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "HOLD",
+          "action": "Homes island with hours budgets.",
+          "provenance": "INFERRED"
+        }
+      },
+      {
+        "id": "au-5",
+        "at": null,
+        "when": "Day +2",
+        "label": "Day +2: Re-energisation",
+        "source": "SYNTHETIC",
+        "provenance": "SYNTHETIC",
+        "grace": {
+          "phase": "HAND OFF",
+          "action": "Propose a staggered recharge for the distributor to approve.",
+          "provenance": "INFERRED"
+        }
+      }
+    ],
+    "demo": [
+      {
+        "id": "tuesday",
+        "title": "Ordinary day",
+        "seconds": 18,
+        "caption": "Normal day: the fleet earns peak relief from energy above each reserve (synthetic prices)."
+      },
+      {
+        "id": "watch",
+        "event": "au-1",
+        "title": "Day −4: Extreme rating forecast",
+        "seconds": 18,
+        "caption": "Flag bushfire-risk feeders; check which batteries report in."
+      },
+      {
+        "id": "ask",
+        "event": "au-2",
+        "title": "Day −2: Catastrophic forecast, distributor warns of switch-off",
+        "seconds": 18,
+        "caption": "Message residents; get medical-priority consent to hold 100%."
+      },
+      {
+        "id": "fill",
+        "event": "au-3",
+        "title": "Day −1: Total fire ban",
+        "seconds": 18,
+        "caption": "Staggered charging inside feeder headroom, medical homes first."
+      },
+      {
+        "id": "hold",
+        "event": "au-4",
+        "title": "Day 0: Feeder switched off",
+        "seconds": 18,
+        "caption": "Homes island with hours budgets."
+      },
+      {
+        "id": "silent",
+        "title": "Night: network loss",
+        "seconds": 18,
+        "caption": "Four batteries go quiet and keep their local rule; classified not talking / tripped / broken."
+      },
+      {
+        "id": "handoff",
+        "event": "au-5",
+        "title": "Day +2: Re-energisation",
+        "seconds": 18,
+        "caption": "Propose a staggered recharge for the distributor to approve."
+      }
+    ]
+  }
+}

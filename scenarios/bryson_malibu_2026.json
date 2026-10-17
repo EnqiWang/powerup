@@ -1,0 +1,156 @@
+{
+  "schema": "powerup.scenario.v1",
+  "id": "bryson-malibu-2026",
+  "region": "la-wildfire",
+  "title": "Bryson Fire replay · Malibu · October 2026",
+  "pitch": "The forecast saw it coming 6 days before Malibu went dark.",
+  "provenance": "REAL",
+  "sourceNote": "Event dates, times and counts were compiled by the team from public reports (NWS, SCE, City of Malibu, Cal Fire). Grace actions are INFERRED: what PoweruP would have done. No Base customer or real dispatch took part.",
+  "zip": "90265",
+  "usage": {
+    "source": "SCE monthly residential ZIP aggregates via ORNL OpenEnergy Hub",
+    "provenance": "REAL",
+    "note": "ZIP 90265 residential average, latest month in the snapshot. Not household telemetry."
+  },
+  "circuits": [
+    { "name": "Cuthbert", "customers": 2407, "source": "SCE / City of Malibu public reports" },
+    { "name": "Galahad", "customers": 2220, "source": "SCE / City of Malibu public reports" },
+    { "name": "Merlin", "customers": 775, "source": "SCE / City of Malibu public reports" },
+    { "name": "Maguire", "customers": 687, "source": "SCE / City of Malibu public reports" },
+    { "name": "Serra", "customers": 285, "source": "SCE / City of Malibu public reports" },
+    { "name": "Tuna", "customers": null, "source": "No public customer count found" }
+  ],
+  "fleet": {
+    "provenance": "ASSUMED",
+    "note": "One representative Base Core home per de-energized circuit. Each uses the real ZIP 90265 average load. Starting charge and Medical Baseline enrollment are assumptions.",
+    "homes": [
+      { "circuit": "Cuthbert", "startSoc": 0.35, "medicalBaseline": true },
+      { "circuit": "Galahad", "startSoc": 0.55, "medicalBaseline": false },
+      { "circuit": "Merlin", "startSoc": 0.25, "medicalBaseline": false },
+      { "circuit": "Maguire", "startSoc": 0.45, "medicalBaseline": false },
+      { "circuit": "Serra", "startSoc": 0.3, "medicalBaseline": false },
+      { "circuit": "Tuna", "startSoc": 0.6, "medicalBaseline": true }
+    ]
+  },
+  "cfg": { "duration": 48, "lead": 24, "headroom": 8, "floor": 0.2 },
+  "cfgProvenance": "ASSUMED: 48 h planning horizon, 24 h fill window (Red Flag Warning to shutoff), 8 kW spare circuit headroom",
+  "prices": { "buy": 0.15, "sell": 0.4, "eventHours": 2, "dailyReserve": 6 },
+  "recharge": { "lead": 8, "headroom": 8, "provenance": "ASSUMED: 8 h restoration window, 8 kW spare headroom on re-energized circuit" },
+  "events": [
+    {
+      "id": "nws-santa-ana",
+      "at": "2026-10-09T02:14:00-07:00",
+      "label": "NWS first mentions possible Santa Ana winds",
+      "source": "NWS",
+      "provenance": "REAL",
+      "grace": { "phase": "WATCH", "action": "Flag high-risk circuits; check which batteries report in.", "provenance": "INFERRED" }
+    },
+    {
+      "id": "sce-notice",
+      "at": "2026-10-12T12:00:00-07:00",
+      "dateOnly": true,
+      "label": "SCE tells the City it may cut Cuthbert, Galahad, Maguire, Merlin from Oct 15",
+      "source": "SCE / City of Malibu",
+      "provenance": "REAL",
+      "grace": { "phase": "ASK", "action": "Text residents; get Medical Baseline consent to hold batteries at 100%.", "provenance": "INFERRED" }
+    },
+    {
+      "id": "fire-weather-watch",
+      "at": "2026-10-13T12:00:00-07:00",
+      "dateOnly": true,
+      "label": "Fire Weather Watch issued",
+      "source": "NWS",
+      "provenance": "REAL"
+    },
+    {
+      "id": "six-circuits",
+      "at": "2026-10-14T17:00:00-07:00",
+      "label": "Serra and Tuna added (6 circuits); 5 PM Red Flag Warning; heat advisory up to 95°F",
+      "source": "SCE / City of Malibu / NWS",
+      "provenance": "REAL",
+      "grace": { "phase": "FILL", "action": "Staggered charging, Medical Baseline homes first; export paused.", "provenance": "INFERRED" }
+    },
+    {
+      "id": "bryson-ignition",
+      "at": "2026-10-15T16:41:00-07:00",
+      "label": "Bryson Fire starts 4:41 PM; power out in central/west Malibu by 5 PM",
+      "source": "Cal Fire / City of Malibu / SCE",
+      "provenance": "REAL",
+      "grace": { "phase": "HOLD", "action": "Homes island; each gets an hours budget.", "provenance": "INFERRED" }
+    },
+    {
+      "id": "network-loss",
+      "at": "2026-10-16T03:00:00-07:00",
+      "label": "3 AM: four batteries stop reporting",
+      "source": "PoweruP scenario",
+      "provenance": "ASSUMED",
+      "grace": { "phase": "HOLD", "action": "Silent batteries keep their local rule; classified not talking / tripped / broken.", "provenance": "INFERRED" }
+    },
+    {
+      "id": "sce-69746",
+      "at": "2026-10-16T07:00:00-07:00",
+      "label": "69,746 SCE customers out (LA + Ventura counties)",
+      "source": "SCE",
+      "provenance": "REAL"
+    },
+    {
+      "id": "restoration",
+      "at": null,
+      "when": "After the winds",
+      "label": "After the winds: restoration takes 8+ hours",
+      "source": "SCE public reports",
+      "provenance": "REAL",
+      "grace": { "phase": "HAND OFF", "action": "Propose a staggered recharge for the SCE shutoff officer to approve, avoiding a cold-start surge.", "provenance": "INFERRED" }
+    }
+  ],
+  "demo": [
+    {
+      "id": "tuesday",
+      "title": "Ordinary Tuesday · 6 PM",
+      "seconds": 20,
+      "caption": "Normal day in Malibu. At the 6 PM peak, the fleet sells SCE peak relief using only energy above each home's protected reserve. That pays for the battery."
+    },
+    {
+      "id": "watch",
+      "event": "nws-santa-ana",
+      "title": "Oct 9, 2:14 AM · WATCH",
+      "seconds": 20,
+      "caption": "NWS first mentions possible Santa Ana winds, six days out. Grace flags the high-risk circuits and checks which batteries report in."
+    },
+    {
+      "id": "ask",
+      "event": "sce-notice",
+      "title": "Oct 12 · ASK",
+      "seconds": 22,
+      "caption": "SCE warns the City that four circuits may be cut from Oct 15. Grace texts residents (simulated) and asks Medical Baseline homes to consent to holding their batteries at 100%."
+    },
+    {
+      "id": "fill",
+      "event": "six-circuits",
+      "title": "Oct 13–14 · FILL",
+      "seconds": 26,
+      "caption": "Fire Weather Watch, then six circuits and a 5 PM Red Flag Warning. Instead of everyone charging at once, Grace staggers charging inside the circuit's spare capacity, Medical Baseline homes first. Export is paused."
+    },
+    {
+      "id": "hold",
+      "event": "bryson-ignition",
+      "title": "Oct 15, 4:41 PM · HOLD",
+      "seconds": 24,
+      "caption": "The Bryson Fire starts. Central and west Malibu are dark by 5 PM. Every home islands and gets an hours budget, so essential loads outlast the outage instead of running flat overnight."
+    },
+    {
+      "id": "silent",
+      "event": "network-loss",
+      "title": "Oct 16, 3 AM · network loss",
+      "seconds": 24,
+      "caption": "The network drops. Four batteries go quiet, but each keeps following its local rule. Grace sorts them: not talking, tripped, or broken. By 7 AM, 69,746 SCE customers are out across LA and Ventura."
+    },
+    {
+      "id": "handoff",
+      "event": "restoration",
+      "title": "After the winds · HAND OFF",
+      "seconds": 24,
+      "caption": "Restoration takes 8+ hours. Grace proposes a staggered recharge for the SCE shutoff officer to approve, so batteries don't create a cold-start surge. Everything it can't cover is listed for a human."
+    }
+  ]
+}

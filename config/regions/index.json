@@ -1,0 +1,10 @@
+{
+  "schema": "powerup.regions.v1",
+  "default": "la-wildfire",
+  "regions": [
+    "la-wildfire",
+    "au-bushfire",
+    "jp-typhoon",
+    "community-battery"
+  ]
+}

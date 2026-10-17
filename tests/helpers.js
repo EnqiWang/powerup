@@ -9,7 +9,7 @@ const config = json("data/twists.json");
 
 // Six homes built the same way sce.js/app.js do from the bundled SCE snapshot.
 function fleet() {
-  return Object.values(snaps.sce.zips).map((d, i) => {
+  return Object.values(snaps.sce.zips).filter((d) => d.zip !== "90265").map((d, i) => {
     const h = P.makeHome(i + 1, "ZIP " + d.zip + " · Usage scenario", d.latest.meanKw, {
       kind: "zip-benchmark",
       zip: d.zip,
