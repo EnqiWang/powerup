@@ -7,10 +7,12 @@
 .start-steps b, .start-steps span { display: block; }
 .start-steps b { margin-bottom: 8px; font-size: 15px; }
 .start-steps span { color: var(--muted); line-height: 1.6; }
-body:not(.has-homes) [data-app-view="operations"] > :not(#gettingStarted) { display: none; }
+body:not(.has-homes) [data-app-view="operations"] > :not(#gettingStarted):not(.plan-progress) { display: none; }
 body.has-homes #gettingStarted { display: none; }
 .planning-hint { padding: 14px 18px; background: var(--soft); border-left: 3px solid var(--green); border-radius: 8px; line-height: 1.6; }
 .session-options { margin: 0 0 22px; }
+body:not([data-view="operations"]) .session-options,
+body:not([data-view="operations"]) #tour { display: none; }
 .session-options > summary, .charging-settings > summary, .extra-estimates > summary { padding: 12px 0; cursor: pointer; color: var(--muted); }
 .session-options .section-body { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .session-options .controlbar { flex-basis: 100%; }

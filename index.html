@@ -20,7 +20,8 @@
   </script>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="style.css?v=23" />
-  <link rel="stylesheet" href="demo.css?v=23" />
+  <link rel="stylesheet" href="demo.css?v=24" />
+  <link rel="stylesheet" href="simple-ui.css?v=25" />
 </head>
 
 <body>
@@ -93,6 +94,11 @@
         <button id="tourNext" class="primary">Next →</button><button id="tourClose">Close</button>
       </div>
       <section data-app-view="operations" class="app-view">
+        <ol class="plan-progress" aria-label="Your planning steps">
+          <li data-plan-step="1"><span>1</span> Load homes</li>
+          <li data-plan-step="2"><span>2</span> Choose backup hours</li>
+          <li data-plan-step="3"><span>3</span> Review your plan</li>
+        </ol>
         <section id="gettingStarted" class="getting-started panel" aria-labelledby="startTitle">
           <div class="eyebrow">START HERE</div>
           <h2 id="startTitle">How long could your homes stay powered?</h2>
@@ -101,11 +107,6 @@
             <button id="tryExamples" class="primary">Try example homes</button>
             <button data-view="data">Load electricity data</button>
           </div>
-          <ol class="start-steps">
-            <li><b>1. Load homes</b><span>Use our examples or load electricity data.</span></li>
-            <li><b>2. Choose backup hours</b><span>Tell us how long the power may be out.</span></li>
-            <li><b>3. Review your plan</b><span>Check who is ready and who needs help.</span></li>
-          </ol>
           <p class="small">Planning demo only. Example homes use historical electricity data with simulated batteries. Nothing controls real equipment.</p>
         </section>
         <p class="planning-hint" id="planningHint">Next: choose your backup hours on the left, then select Review plan. Estimates update as you change settings.</p>
@@ -134,7 +135,7 @@
             <p class="small" id="modeDescription">
               Choose how long homes need backup power and how much power is available to charge their batteries.
             </p>
-            <label class="backup-target">Backup needed (hours)<input id="duration" type="number" min="0.25" max="168" step="0.25"
+            <label class="backup-target">How many hours of backup?<input id="duration" type="number" min="0.25" max="168" step="0.25"
                 value="24" /></label><label class="charge-timing">Time to charge before the outage (hours)<input id="lead" type="number" min="0.25" max="48"
                 step="0.25" value="6" /></label>
             <details class="charging-settings">
@@ -485,12 +486,12 @@
     <button id="closeRequest">Close preview</button>
   </dialog>
   <dialog id="review">
-    <h2>Approve this simulated plan?</h2>
+    <h2>Review your backup plan</h2>
     <p id="reviewText"></p>
     <p class="small">
       Approval saves the plan for this demo. Homes that still need help remain flagged. No real battery is controlled.
     </p>
-    <button id="confirm" class="primary">Approve simulated plan</button> <button id="cancel">Cancel</button>
+    <button id="confirm" class="primary">Save this demo plan</button> <button id="cancel">Go back</button>
   </dialog>
   <dialog id="notifyReview">
     <h2>Review preparation alert</h2>
@@ -508,13 +509,13 @@
   <script src="engine.js?v=23"></script>
   <script src="advanced.js?v=23"></script>
   <script src="demo-model.js?v=23"></script>
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=25"></script>
   <script src="experience.js?v=23"></script>
   <script src="sce.js?v=23"></script>
   <script src="notifications.js?v=23"></script>
-  <script src="visual.js?v=23"></script>
-  <script src="demo.js?v=23"></script>
-  <script src="ui.js?v=23"></script>
+  <script src="visual.js?v=24"></script>
+  <script src="demo.js?v=24"></script>
+  <script src="ui.js?v=25"></script>
 </body>
 
 </html>
