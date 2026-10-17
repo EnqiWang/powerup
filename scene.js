@@ -427,6 +427,7 @@
       ready = false;
       map.setStyle(styleUrl());
     }
+    fallback();
   }
   root.PowerupScene = { render, resize, zipOf, setTheme };
 })(globalThis);
