@@ -1,0 +1,83 @@
+{
+ "schema": "powerup.measured-loads.v1",
+ "source": "Open Power System Data \u2014 Household data 2020-04-15 (CoSSMic, Konstanz DE), 60-min grid import",
+ "location": "Konstanz, Germany (measured households; not LA)",
+ "method": "Mean kW = cumulative grid-import kWh change / elapsed hours. Grid import only; on-site PV self-consumption not included.",
+ "sourceUrl": "https://data.open-power-system-data.org/household_data/2020-04-15/household_data_60min_singleindex.csv",
+ "fetchedAt": "2026-10-17T06:25:37Z",
+ "snapshot": true,
+ "homes": [
+  {
+   "name": "OPSD residential 1",
+   "meanKw": 0.5731,
+   "measurement": {
+    "kind": "opsd-household",
+    "column": "DE_KN_residential1_grid_import",
+    "first": "2015-05-21T15:00:00Z",
+    "last": "2017-03-12T23:00:00Z",
+    "hours": 15872,
+    "kwh": 9096.3
+   }
+  },
+  {
+   "name": "OPSD residential 2",
+   "meanKw": 0.2846,
+   "measurement": {
+    "kind": "opsd-household",
+    "column": "DE_KN_residential2_grid_import",
+    "first": "2015-04-15T09:00:00Z",
+    "last": "2017-02-01T14:00:00Z",
+    "hours": 15797,
+    "kwh": 4495.4
+   }
+  },
+  {
+   "name": "OPSD residential 3",
+   "meanKw": 0.4854,
+   "measurement": {
+    "kind": "opsd-household",
+    "column": "DE_KN_residential3_grid_import",
+    "first": "2016-02-28T17:00:00Z",
+    "last": "2017-07-08T16:00:00Z",
+    "hours": 11903,
+    "kwh": 5777.8
+   }
+  },
+  {
+   "name": "OPSD residential 4",
+   "meanKw": 0.5033,
+   "measurement": {
+    "kind": "opsd-household",
+    "column": "DE_KN_residential4_grid_import",
+    "first": "2015-10-10T16:00:00Z",
+    "last": "2018-02-04T23:00:00Z",
+    "hours": 20359,
+    "kwh": 10247.0
+   }
+  },
+  {
+   "name": "OPSD residential 5",
+   "meanKw": 0.2848,
+   "measurement": {
+    "kind": "opsd-household",
+    "column": "DE_KN_residential5_grid_import",
+    "first": "2015-10-26T11:00:00Z",
+    "last": "2019-05-01T22:00:00Z",
+    "hours": 30803,
+    "kwh": 8773.8
+   }
+  },
+  {
+   "name": "OPSD residential 6",
+   "meanKw": 0.3412,
+   "measurement": {
+    "kind": "opsd-household",
+    "column": "DE_KN_residential6_grid_import",
+    "first": "2015-10-24T17:00:00Z",
+    "last": "2018-04-08T22:00:00Z",
+    "hours": 21533,
+    "kwh": 7346.9
+   }
+  }
+ ]
+}

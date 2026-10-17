@@ -1,0 +1,254 @@
+{
+ "schema": "powerup.sce-snapshot.v1",
+ "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+ "captureNote": "Historical June 2024 residential ZIP aggregates transcribed from a successful ORNL/SCE API response (same records as visual.js offline()). Not individual household telemetry.",
+ "fetchedAt": "2026-10-17T04:56:08Z",
+ "zips": {
+  "90002": {
+   "kind": "zip-benchmark",
+   "zip": "90002",
+   "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+   "fetchedAt": "2026-10-17T04:56:08Z",
+   "apiUrl": "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/sce-energy-data/records?limit=20",
+   "records": [
+    {
+     "zip_code": "90002",
+     "customer_class": "Residential",
+     "combined": "N",
+     "year": 2024,
+     "month": 6,
+     "totalaccounts": 3255,
+     "totalkwh": 1225332,
+     "averagekwh": 376.446082949309,
+     "days": 30,
+     "dailyKwh": 12.548202764976967,
+     "meanKw": 0.5228417818740403,
+     "usable": true
+    }
+   ],
+   "latest": {
+    "zip_code": "90002",
+    "customer_class": "Residential",
+    "combined": "N",
+    "year": 2024,
+    "month": 6,
+    "totalaccounts": 3255,
+    "totalkwh": 1225332,
+    "averagekwh": 376.446082949309,
+    "days": 30,
+    "dailyKwh": 12.548202764976967,
+    "meanKw": 0.5228417818740403,
+    "usable": true
+   },
+   "cached": true,
+   "stale": true,
+   "snapshot": true,
+   "note": "Saved historical ZIP average (demo snapshot). Not individual household telemetry."
+  },
+  "90008": {
+   "kind": "zip-benchmark",
+   "zip": "90008",
+   "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+   "fetchedAt": "2026-10-17T04:56:08Z",
+   "apiUrl": "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/sce-energy-data/records?limit=20",
+   "records": [
+    {
+     "zip_code": "90008",
+     "customer_class": "Residential",
+     "combined": "N",
+     "year": 2024,
+     "month": 6,
+     "totalaccounts": 674,
+     "totalkwh": 318086,
+     "averagekwh": 471.937685459941,
+     "days": 30,
+     "dailyKwh": 15.731256181998033,
+     "meanKw": 0.6554690075832514,
+     "usable": true
+    }
+   ],
+   "latest": {
+    "zip_code": "90008",
+    "customer_class": "Residential",
+    "combined": "N",
+    "year": 2024,
+    "month": 6,
+    "totalaccounts": 674,
+    "totalkwh": 318086,
+    "averagekwh": 471.937685459941,
+    "days": 30,
+    "dailyKwh": 15.731256181998033,
+    "meanKw": 0.6554690075832514,
+    "usable": true
+   },
+   "cached": true,
+   "stale": true,
+   "snapshot": true,
+   "note": "Saved historical ZIP average (demo snapshot). Not individual household telemetry."
+  },
+  "90022": {
+   "kind": "zip-benchmark",
+   "zip": "90022",
+   "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+   "fetchedAt": "2026-10-17T04:56:08Z",
+   "apiUrl": "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/sce-energy-data/records?limit=20",
+   "records": [
+    {
+     "zip_code": "90022",
+     "customer_class": "Residential",
+     "combined": "N",
+     "year": 2024,
+     "month": 6,
+     "totalaccounts": 16599,
+     "totalkwh": 4656899,
+     "averagekwh": 280.552985119586,
+     "days": 30,
+     "dailyKwh": 9.351766170652867,
+     "meanKw": 0.3896569237772028,
+     "usable": true
+    }
+   ],
+   "latest": {
+    "zip_code": "90022",
+    "customer_class": "Residential",
+    "combined": "N",
+    "year": 2024,
+    "month": 6,
+    "totalaccounts": 16599,
+    "totalkwh": 4656899,
+    "averagekwh": 280.552985119586,
+    "days": 30,
+    "dailyKwh": 9.351766170652867,
+    "meanKw": 0.3896569237772028,
+    "usable": true
+   },
+   "cached": true,
+   "stale": true,
+   "snapshot": true,
+   "note": "Saved historical ZIP average (demo snapshot). Not individual household telemetry."
+  },
+  "90040": {
+   "kind": "zip-benchmark",
+   "zip": "90040",
+   "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+   "fetchedAt": "2026-10-17T04:56:08Z",
+   "apiUrl": "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/sce-energy-data/records?limit=20",
+   "records": [
+    {
+     "zip_code": "90040",
+     "customer_class": "Residential",
+     "combined": "N",
+     "year": 2024,
+     "month": 6,
+     "totalaccounts": 3291,
+     "totalkwh": 1046865,
+     "averagekwh": 318.09936189608,
+     "days": 30,
+     "dailyKwh": 10.603312063202667,
+     "meanKw": 0.4418046693001111,
+     "usable": true
+    }
+   ],
+   "latest": {
+    "zip_code": "90040",
+    "customer_class": "Residential",
+    "combined": "N",
+    "year": 2024,
+    "month": 6,
+    "totalaccounts": 3291,
+    "totalkwh": 1046865,
+    "averagekwh": 318.09936189608,
+    "days": 30,
+    "dailyKwh": 10.603312063202667,
+    "meanKw": 0.4418046693001111,
+    "usable": true
+   },
+   "cached": true,
+   "stale": true,
+   "snapshot": true,
+   "note": "Saved historical ZIP average (demo snapshot). Not individual household telemetry."
+  },
+  "90045": {
+   "kind": "zip-benchmark",
+   "zip": "90045",
+   "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+   "fetchedAt": "2026-10-17T04:56:08Z",
+   "apiUrl": "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/sce-energy-data/records?limit=20",
+   "records": [
+    {
+     "zip_code": "90045",
+     "customer_class": "Residential",
+     "combined": "N",
+     "year": 2024,
+     "month": 6,
+     "totalaccounts": 444,
+     "totalkwh": 101423,
+     "averagekwh": 228.43018018018,
+     "days": 30,
+     "dailyKwh": 7.614339339339334,
+     "meanKw": 0.31726413913913887,
+     "usable": true
+    }
+   ],
+   "latest": {
+    "zip_code": "90045",
+    "customer_class": "Residential",
+    "combined": "N",
+    "year": 2024,
+    "month": 6,
+    "totalaccounts": 444,
+    "totalkwh": 101423,
+    "averagekwh": 228.43018018018,
+    "days": 30,
+    "dailyKwh": 7.614339339339334,
+    "meanKw": 0.31726413913913887,
+    "usable": true
+   },
+   "cached": true,
+   "stale": true,
+   "snapshot": true,
+   "note": "Saved historical ZIP average (demo snapshot). Not individual household telemetry."
+  },
+  "90046": {
+   "kind": "zip-benchmark",
+   "zip": "90046",
+   "source": "SCE monthly ZIP aggregates via ORNL OpenEnergy Hub",
+   "fetchedAt": "2026-10-17T04:56:08Z",
+   "apiUrl": "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/sce-energy-data/records?limit=20",
+   "records": [
+    {
+     "zip_code": "90046",
+     "customer_class": "Residential",
+     "combined": "N",
+     "year": 2024,
+     "month": 6,
+     "totalaccounts": 11434,
+     "totalkwh": 2481229,
+     "averagekwh": 217.004460381319,
+     "days": 30,
+     "dailyKwh": 7.233482012710634,
+     "meanKw": 0.30139508386294306,
+     "usable": true
+    }
+   ],
+   "latest": {
+    "zip_code": "90046",
+    "customer_class": "Residential",
+    "combined": "N",
+    "year": 2024,
+    "month": 6,
+    "totalaccounts": 11434,
+    "totalkwh": 2481229,
+    "averagekwh": 217.004460381319,
+    "days": 30,
+    "dailyKwh": 7.233482012710634,
+    "meanKw": 0.30139508386294306,
+    "usable": true
+   },
+   "cached": true,
+   "stale": true,
+   "snapshot": true,
+   "note": "Saved historical ZIP average (demo snapshot). Not individual household telemetry."
+  }
+ }
+}
