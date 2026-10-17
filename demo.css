@@ -1,4 +1,19 @@
 /* Demo layer styles (demo.js, scene.js fallback). Kept separate from style.css. Uses theme tokens. */
+.scenario-help {
+  flex-basis: 100%;
+  margin-top: 4px;
+  color: var(--muted);
+}
+.scenario-help summary {
+  font-size: 12px;
+  color: var(--muted);
+}
+.scenario-help p {
+  max-width: 850px;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .headline {
   position: sticky;
   top: 0;
@@ -24,9 +39,9 @@
 .hl-detail {
   color: var(--muted);
   font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.5;
 }
 .hl strong {
   font-size: 20px;

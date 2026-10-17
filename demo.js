@@ -147,7 +147,7 @@
         const value = x.id === "value" ? money(x.value) : f(x.value, x.id === "headroom" ? 1 : 0),
           prov = synthetic() ? "SYNTHETIC" : x.provenance,
           sourceLabel = { REAL: "Recorded data", ASSUMED: "Estimate", MIXED: "Data + estimates", SYNTHETIC: "Synthetic estimate" }[prov];
-        return `<div class="hl" title="${safe(x.sources)}"><span class="hl-label">${safe(x.label)} ${badge(prov)}</span><strong>${value}<small> ${safe(x.unit)}</small></strong><span class="hl-detail">${safe(x.detail)}</span></div>`;
+        return `<div class="hl" title="${safe(x.sources)}"><span class="hl-label">${safe(x.label)} <i class="prov ${prov.toLowerCase()}">${sourceLabel}</i></span><strong>${value}<small> ${safe(x.unit)}</small></strong><span class="hl-detail">${safe(x.detail)}</span></div>`;
       })
       .join("");
   }
@@ -721,15 +721,6 @@
         const r = M.validateRegion(await getJSON(`config/regions/${id}.json`));
         r.scenarioData = M.validateScenario(typeof r.scenario === "string" ? await getJSON(r.scenario) : r.scenario);
         R[id] = r;
-      }
-      writeInputs({ cfg, shield: shieldValues(), criticalLoads: P.clone(C.criticalLoads) });
-      renderTwists();
-      if (root.POWERUP_DEMO && !homes.length) {
-        V.offline();
-        if (new URLSearchParams(location.search).has("autoplay")) start();
-      }
-      const q = new URLSearchParams(location.search);
-      region = R[q.get("region")] || R[index.default];
       }
       const q = new URLSearchParams(location.search);
       region = R[q.get("region")] || R[index.default];
