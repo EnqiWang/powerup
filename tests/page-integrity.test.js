@@ -24,3 +24,26 @@ test("every page script parses before it reaches the browser", () => {
     assert.doesNotThrow(() => new vm.Script(code, { filename: src || "inline script" }));
   }
 });
+
+test("first-use flow offers examples and keeps technical inputs collapsed", () => {
+  assert.match(html, /id="gettingStarted"/);
+  assert.match(html, /id="tryExamples"[^>]*>Try example homes/);
+  assert.match(html, /<details class="charging-settings">[\s\S]*?id="headroom"[\s\S]*?id="floor"[\s\S]*?<\/details>/);
+  assert.match(html, /id="approve"[^>]*>Review plan/);
+  const visual = fs.readFileSync(path.join(root, "visual.js"), "utf8");
+  assert.match(visual, /\$\("tryExamples"\)\.onclick = \(\) => \{\s*mode = "prepare";\s*offline\(\);/);
+});
+
+test("old poster URL redirects to the app, including on GitHub Pages subpaths", () => {
+  const poster = fs.readFileSync(path.join(root, "poster.html"), "utf8");
+  assert.match(poster, /window\.location\.replace\("\.\/"\)/);
+  assert.match(poster, /http-equiv="refresh" content="0; url=\.\/"/);
+  assert.equal(new URL("./", "https://enqiwang.github.io/powerup/poster.html").pathname, "/powerup/");
+  assert.doesNotMatch(poster, /Export PNG|Export PDF|<canvas/);
+});
+
+test("simplified overview labels its average correctly and includes unverified homes needing help", () => {
+  const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
+  assert.match(app, /"AVERAGE BACKUP TIME",\s*known\.length \? fmt\(coverage \/ known\.length\)/);
+  assert.match(app, /"HOMES NEEDING HELP",\s*String\(homes\.length - ready\)/);
+});

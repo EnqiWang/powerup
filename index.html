@@ -19,8 +19,8 @@
     }
   </script>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="style.css?v=21" />
-  <link rel="stylesheet" href="demo.css?v=21" />
+  <link rel="stylesheet" href="style.css?v=23" />
+  <link rel="stylesheet" href="demo.css?v=23" />
 </head>
 
 <body>
@@ -77,7 +77,7 @@
         <div>
           <div class="eyebrow">OPERATIONS / LOS ANGELES</div>
           <h1>Stay ahead of the outage<span>.</span></h1>
-          <p>Plan when to charge home batteries and see how long their backup power could last.</p>
+          <p>See which homes have enough backup power, and make a plan for those that need help.</p>
         </div>
         <div class="global-actions">
           <button id="jumpNotify">Resident alerts ↓</button><button id="guided" class="primary">Start guided demo
@@ -93,14 +93,30 @@
         <button id="tourNext" class="primary">Next →</button><button id="tourClose">Close</button>
       </div>
       <section data-app-view="operations" class="app-view">
+        <section id="gettingStarted" class="getting-started panel" aria-labelledby="startTitle">
+          <div class="eyebrow">START HERE</div>
+          <h2 id="startTitle">How long could your homes stay powered?</h2>
+          <p>Try six example homes to see how battery charging and energy savings can help before an outage. No setup needed.</p>
+          <div class="start-actions">
+            <button id="tryExamples" class="primary">Try example homes</button>
+            <button data-view="data">Load electricity data</button>
+          </div>
+          <ol class="start-steps">
+            <li><b>1. Load homes</b><span>Use our examples or load electricity data.</span></li>
+            <li><b>2. Choose backup hours</b><span>Tell us how long the power may be out.</span></li>
+            <li><b>3. Review your plan</b><span>Check who is ready and who needs help.</span></li>
+          </ol>
+          <p class="small">Planning demo only. Example homes use historical electricity data with simulated batteries. Nothing controls real equipment.</p>
+        </section>
+        <p class="planning-hint" id="planningHint">Next: choose your backup hours on the left, then select Review plan. Estimates update as you change settings.</p>
         <div class="journey" aria-label="Operating mode">
           <button data-mode="prepare" class="active">
-            <b>01</b> Storm preparation<span>Charge batteries before the power goes out</span></button><button
+            <b>01</b> Before an outage<span>Charge batteries before the power goes out</span></button><button
             data-mode="outage">
             <b>02</b> During an outage<span>See how long backup power lasts</span></button><button data-mode="shield">
             <b>03</b> Help the neighborhood<span>Reduce demand on the local power line</span></button><button
             data-mode="everyday">
-            <b>04</b> Everyday savings<span>Sell spare energy while keeping backup power</span>
+            <b>04</b> Daily savings<span>Sell spare energy while keeping backup power</span>
           </button>
         </div>
         <div class="overview-tools">
@@ -118,9 +134,12 @@
             <p class="small" id="modeDescription">
               Choose how long homes need backup power and how much power is available to charge their batteries.
             </p>
-            <label>Backup needed (hours)<input id="duration" type="number" min="0.25" max="168" step="0.25"
-                value="24" /></label><label>Time to charge before the outage (hours)<input id="lead" type="number" min="0.25" max="48"
-                step="0.25" value="6" /></label><label>Power available for charging (kW)<input id="headroom"
+            <label class="backup-target">Backup needed (hours)<input id="duration" type="number" min="0.25" max="168" step="0.25"
+                value="24" /></label><label class="charge-timing">Time to charge before the outage (hours)<input id="lead" type="number" min="0.25" max="48"
+                step="0.25" value="6" /></label>
+            <details class="charging-settings">
+              <summary>Advanced charging settings</summary>
+              <label>Power available for charging (kW)<input id="headroom"
                 type="number" min="0" max="10000" step="0.5" value="8" /></label><label>Minimum battery charge to aim for
               (%)<input id="floor" type="number" min="0" max="100" value="20" /></label>
             <p class="small">
@@ -129,11 +148,12 @@
             </p>
             <p class="small">kW measures how fast power is used or supplied. kWh measures an amount of energy:
               using 1 kW for 1 hour uses 1 kWh.</p>
+            </details>
             <button id="plan" class="primary wide" hidden>Recalculate preview</button>
             <div class="auto-calc-note">
               <span class="connection-dot"></span> Calculations update automatically
             </div>
-            <button id="approve" class="wide" disabled>Review &amp; approve</button><button id="stress" class="wide">Try a past LA
+            <button id="approve" class="primary wide" disabled>Review plan</button><button id="stress" class="wide">Try a past LA
               outage · 43 hours</button>
             <div id="outageControls" hidden>
               <hr />
@@ -483,18 +503,18 @@
     <button id="cancelNotify">Cancel</button>
   </dialog>
 
-  <script src="static-api.js?v=20"></script>
-  <script src="scene.js?v=20"></script>
-  <script src="engine.js?v=20"></script>
-  <script src="advanced.js?v=20"></script>
-  <script src="demo-model.js?v=20"></script>
-  <script src="app.js?v=20"></script>
-  <script src="experience.js?v=20"></script>
-  <script src="sce.js?v=20"></script>
-  <script src="notifications.js?v=20"></script>
-  <script src="visual.js?v=20"></script>
-  <script src="demo.js?v=21"></script>
-  <script src="ui.js?v=20"></script>
+  <script src="static-api.js?v=23"></script>
+  <script src="scene.js?v=23"></script>
+  <script src="engine.js?v=23"></script>
+  <script src="advanced.js?v=23"></script>
+  <script src="demo-model.js?v=23"></script>
+  <script src="app.js?v=23"></script>
+  <script src="experience.js?v=23"></script>
+  <script src="sce.js?v=23"></script>
+  <script src="notifications.js?v=23"></script>
+  <script src="visual.js?v=23"></script>
+  <script src="demo.js?v=23"></script>
+  <script src="ui.js?v=23"></script>
 </body>
 
 </html>

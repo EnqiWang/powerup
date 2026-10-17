@@ -171,6 +171,8 @@ function renderEmpty() {
     });
 }
 function render() {
+  document.body.classList.toggle("has-homes", homes.length > 0);
+  document.body.dataset.mode = mode;
   if (!homes.length) {
     renderEmpty();
     return;
@@ -200,14 +202,14 @@ function render() {
       `${homes.length - known.length} not reporting · ${known.length - ready} need more energy`,
     ],
     [
-      "TOTAL BACKUP HOURS",
-      fmt(coverage) + " h",
-      "Added across homes, up to the hours each needs",
+      "AVERAGE BACKUP TIME",
+      known.length ? fmt(coverage / known.length) + " h" : "Unknown",
+      "Per reporting home, capped at the backup time needed",
     ],
     [
-      "PREVIEW STATUS",
-      approved ? "Approved" : plan ? "Updated" : "Awaiting data",
-      outage ? `${fmt(outage.elapsed)} / ${cfg.duration} hours replayed` : "No real commands sent",
+      "HOMES NEEDING HELP",
+      String(homes.length - ready),
+      "Not enough backup, or battery status unknown",
     ],
   ];
   if (mode === "everyday") {

@@ -46,6 +46,44 @@
     box.addEventListener("toggle", () => states.set(id, box.open));
     return box;
   }
+  // Move existing controls rather than recreating them: their listeners and IDs stay intact.
+  const settings = fold("session", "More options", [
+    doc.querySelector(".controlbar"),
+    ...["demoToggle", "guided", "jumpNotify", "reset", "export"].map((id) => doc.getElementById(id)),
+  ]);
+  settings.classList.add("session-options");
+  doc.querySelector(".pagehead").after(settings);
+  doc.getElementById("guided").textContent = "Step-by-step practice";
+  const run = doc.getElementById("runDemo");
+  run.textContent = "Watch walkthrough";
+  run.classList.remove("primary");
+  run.title = "Watch a 3-minute simulated outage replay";
+  const operations = doc.querySelector('[data-app-view="operations"]');
+  const estimates = fold("estimates", "More estimates & assumptions", [doc.getElementById("headline")]);
+  estimates.classList.add("extra-estimates");
+  operations.insertBefore(estimates, operations.querySelector(".advanced-disclosure"));
+  const stress = doc.getElementById("stress");
+  doc.querySelector(".charging-settings").appendChild(stress);
+  const approve = doc.getElementById("approve");
+  doc.querySelector(".charging-settings").before(approve);
+  // The empty workspace stays out of the way until data or examples have been loaded.
+  doc.body.classList.toggle("has-homes", homes.length > 0);
+  doc.body.dataset.mode = mode;
+  const updateHint = () => {
+    doc.getElementById("planningHint").textContent = !homes.length
+      ? ""
+      : mode === "prepare"
+        ? approved
+          ? "Plan approved for this simulation. Choose During an outage to see how the backup lasts."
+          : "Choose your backup hours in Your plan, then select Review plan. Estimates update automatically."
+        : mode === "outage"
+          ? "Choose Start outage simulation, then advance the clock to see how long backup lasts."
+          : mode === "shield"
+            ? "Adjust the nearby services below to estimate how much help the batteries can provide."
+            : "Set example prices and the backup hours to keep, then compare the estimated earnings.";
+  };
+  new MutationObserver(updateHint).observe(doc.getElementById("banner"), { childList: true });
+  updateHint();
   function decorate() {
     const target = doc.getElementById("detail"),
       first = target?.firstElementChild;

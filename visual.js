@@ -69,6 +69,11 @@
   document.querySelectorAll("[data-view]").forEach((b) => (b.onclick = () => view(b.dataset.view)));
   $("jumpNotify").onclick = () => view("residents");
   $("offlineData").onclick = offline;
+  $("tryExamples").onclick = () => {
+    mode = "prepare";
+    offline();
+    $("duration").focus({ preventScroll: true });
+  };
   const oldLoad = $("loadSce").onclick;
   $("loadSce").onclick = async () => {
     await oldLoad();
