@@ -13,7 +13,7 @@ The app is served from the repo root (also the GitHub Pages root). Python 3 is t
 
 | OS | Command |
 |---|---|
-| Windows | double-click `PoweruP-green-blue-demo\start-windows.bat` |
+| Windows | double-click `start-windows.bat` |
 | macOS / Linux | `./start-mac.sh` |
 
 Either script serves the folder at `http://localhost:8004` and opens **`/?demo=1`**. Then press **▶ Run demo**.
