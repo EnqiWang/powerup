@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const root = path.join(__dirname, "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "planner.html"), "utf8");
 
 test("page has one shell, header and main, with unique IDs and scripts", () => {
   for (const pattern of [/class="app-shell"/g, /class="topbar"/g, /<main\b/g]) {

@@ -50,7 +50,7 @@ test("map=0 keeps the map offline and retains the Census SVG fallback", () => {
 });
 
 test("initial theme defaults to light while honoring a saved choice", () => {
-  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const html = fs.readFileSync(path.join(root, "planner.html"), "utf8");
   const ui = fs.readFileSync(path.join(root, "ui.js"), "utf8");
   assert.match(html, /savedTheme === "dark" \|\| savedTheme === "light"[\s\S]*\? savedTheme[\s\S]*: "light"/);
   assert.match(ui, /saved\s*===\s*["']light["']\s*\|\|\s*saved\s*===\s*["']dark["']\s*\?\s*saved\s*:\s*["']light["']/);
@@ -59,7 +59,7 @@ test("initial theme defaults to light while honoring a saved choice", () => {
 
 test("dashboard omits poster links and twist controls", () => {
   const demo = fs.readFileSync(path.join(root, "demo.js"), "utf8");
-  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const html = fs.readFileSync(path.join(root, "planner.html"), "utf8");
   for (const src of [demo, html]) {
     assert.doesNotMatch(src, /poster\.html|data-twist|twistBar|TRY A SCENARIO|toggleTwist/);
   }
@@ -91,7 +91,7 @@ test("config: Port of Long Beach is labeled ASSUMED and makes no control claim",
 });
 
 test("config: critical-load inputs and every script tag exist", () => {
-  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const html = fs.readFileSync(path.join(root, "planner.html"), "utf8");
   for (const l of config.criticalLoads) assert.match(html, new RegExp(`id="${l.inputId}"`));
   for (const [, src] of html.matchAll(/<script src="([^"?]+)/g)) assert.ok(fs.existsSync(path.join(root, src)), src);
 });

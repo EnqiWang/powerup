@@ -1,1 +1,5 @@
 Microsoft/
+data/PSPS_Subtransmission.geojson
+
+/data/PSPS_Circuit.geojson
+/data/Circuit_Load_Profile.geojson

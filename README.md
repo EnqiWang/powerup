@@ -1,33 +1,19 @@
-# PoweruP: the forecast saw it coming 6 days before Malibu went dark
+# PoweruP: Malibu circuit replay
 
-PoweruP is fleet command for home batteries.
+The home page now follows the supplied Malibu Replay reference: circuit map, hour-by-hour timeline, battery simulation and adjustable assumptions. Light is the default theme.
 
-- **Ordinary Tuesday:** a Base Core fleet sells SCE peak relief.
-- **Shutoff week:** the same fleet runs WATCH → ASK → FILL → HOLD → HAND OFF, replayed here on the real October 2026 Bryson Fire timeline in Malibu.
+Start the local server with `npm start`, then open `http://localhost:8004/`. Use Play or the timeline to explore. Open **Public SCE circuit data** to inspect records fetched directly from SCE.
 
-It is a static web app (HTML/CSS/JS) with no build step and no runtime dependencies. Every number carries a **REAL**, **ASSUMED**, **MIXED**, **INFERRED** or **SYNTHETIC** badge.
-
----
-
-## Run it in 30 seconds
-
-Python 3 is the only requirement. Run from the repo root.
-
-| OS | Command |
+| URL | Purpose |
 |---|---|
-| Windows | double-click `start-windows.bat` |
-| macOS / Linux | `./start-mac.sh` |
+| `/` | Circuit replay using a saved scenario, plus separate public SCE API evidence |
+| `/planner.html?demo=1&map=0` | Previous detailed planner with saved example data and offline outline map |
+| `/planner.html` | Previous detailed planner with its existing data-source options |
+| `/poster.html` | Redirects to the home page; no poster button |
 
-Either script serves the folder at `http://localhost:8004` and opens **`/?demo=1`**. Then press **▶ Run demo**.
+The simulation is not live household telemetry or a utility dispatch system. Live SCE queries provide historical circuit evidence; they do not replace the saved simulation's assumptions. See [DATA_SOURCES.md](DATA_SOURCES.md) for endpoints, limitations, and the verified duplicate-file cleanup.
 
-| URL | What it does |
-|---|---|
-| `/?demo=1` | **Offline mode.** Every data call (SCE/ORNL, NWS, Census ZCTA, OPSD) is answered from `data/snapshots/`. Nothing waits on the network. |
-| `/?demo=1&map=0` | Never requests street tiles. Shows the SVG Census-outline map. Use this on venue Wi-Fi. |
-| `/?demo=1&autoplay` | Starts the narrated replay on load. |
-| `/?demo=1&region=au-bushfire` | Opens with another region (`jp-typhoon`, `community-battery`). |
-| `/poster.html` | The 24×36 in poster, computed live from the same data. |
-| `/` | Live mode: browser-direct public APIs. |
+The launch scripts also open the new home page; its saved replay does not require an API response to run. Public SCE evidence and optional web fonts do require network access.
 
 Tests use Node's built-in runner and need no install:
 
