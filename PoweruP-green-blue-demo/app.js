@@ -11,20 +11,33 @@ function decorate(h){labelProfile(h);h.gridParticipation=!!h.gridParticipation;h
 let weatherSnapshot=null;
 let homes=[],selected=null,mode='prepare',cfg={duration:24,lead:6,headroom:8,floor:.2},prices={buy:.15,sell:.4,eventHours:2,dailyReserve:6},plan=null,approved=false,outage=null,source=null,events=[];
 function log(message){events.unshift({time:new Date().toLocaleTimeString(),message});events=events.slice(0,50);$('log').innerHTML=events.map(e=>`<div class="event"><time>${safe(e.time)}</time>${safe(e.message)}</div>`).join('');}
-function changed(reason) {
-  const hadPlan = Boolean(plan);
-
-  plan = null;
-  approved = false;
-  outage = null;
-
-  log(reason + ' Previous approval cleared.');
-
-  if (hadPlan && homes.length) {
-    build();
-  } else {
-    render();
-  }
+function changed(reason){
+ plan=null;approved=false;outage=null;
+ try{
+  if(homes.length){plan=P.prepare(homes,cfg);$('projected').checked=true;}
+  log(reason+' Preview recalculated automatically; approval cleared.');
+ }catch(error){log('Preview could not update: '+error.message);}
+ render();
+}
+function bindAutomaticInputs(){
+ const bind=(el,find)=>{
+  if(!el||typeof el.onchange!=='function')return;
+  const change=el.onchange;
+  el.oninput=()=>{
+   if(el.value===''||(typeof el.checkValidity==='function'&&!el.checkValidity()))return;
+   const value=el.value,focused=document.activeElement===el,scroll=$('detail').scrollTop;
+   change({target:el});
+   // Detail controls are redrawn; preserve typing focus and the resident's raw entry.
+   const next=find();
+   if(focused&&next){next.value=value;next.focus({preventScroll:true});$('detail').scrollTop=scroll;}
+  };
+ };
+ for(const id of ['duration','lead','headroom','floor','soc','rate','buy','sell','eventHours','dailyReserve','feederCapacity','reliefHours','coldKw','commsKw','portKw']){
+  const el=document.getElementById(id);bind(el,()=>document.getElementById(id));
+ }
+ for(const attr of ['load','window','taskenergy','taskrate'])document.querySelectorAll('[data-'+attr+']').forEach(el=>{
+  const key=el.dataset[attr];bind(el,()=>Array.from(document.querySelectorAll('[data-'+attr+']')).find(n=>n.dataset[attr]===key));
+ });
 }
 function projectedEnergy(h){if(outage)return outage.devices.find(d=>d.id===h.id).energy;return $('projected').checked&&plan?plan.homes.find(x=>x.id===h.id).energy:h.energy;}
 function viewBudget(h){if(outage)return P.outageBudget(outage.devices.find(d=>d.id===h.id),outage.elapsed,cfg.duration);return P.budget(h,cfg,projectedEnergy(h));}
@@ -34,7 +47,7 @@ function renderEmpty(){
  $('metrics').innerHTML='<div class="metric"><span class="small">DATA STATUS</span><strong>Awaiting ZIP data</strong><span class="small">No invented households</span></div><div class="metric"><span class="small">PLANNING</span><strong>Not started</strong><span class="small">Load SCE records above</span></div><div class="metric"><span class="small">BATTERIES</span><strong>Scenario only</strong><span class="small">No enrolled devices connected</span></div>';
  $('map').innerHTML='<div class="empty-message">Load real SCE ZIP benchmarks to begin.<br><span class="small">Each card will show the selected ZIP, its historical monthly average and a clearly labeled battery scenario. No individual houses are invented.</span></div>';
  $('selectedName').textContent='Select a ZIP after loading';$('selectedStatus').textContent='NO DATA';$('detail').innerHTML='<div class="padding"><p>ZIP consumption records appear after the API loads.</p><p class="small">Public SCE records cannot identify individual homes. Actual household measurements can also be imported separately.</p></div>';
- $('chartTitle').textContent='Preparation charging';$('chartLabel').textContent='Awaiting demand inputs';$('chart').innerHTML='<p class="small">A plan will be available after loading ZIP records or measured profiles.</p>';
+ $('chartTitle').textContent='Preparation charging';$('chartLabel').textContent='Awaiting demand inputs';$('chart').innerHTML='<p class="small">Calculations appear automatically after loading ZIP records or measured profiles.</p>';
  $('banner').textContent='Load SCE API above to create ZIP-based usage scenarios. No household loads or readiness scores have been invented.';
  for(const id of ['plan','approve','projected','startOutage','advance','finish','simulatePeerLoss'])$(id).disabled=true;
  $('outageControls').hidden=mode!=='outage';$('shieldControls').hidden=mode!=='shield';$('priceControls').hidden=mode!=='everyday';
@@ -48,14 +61,14 @@ function render(){
  homes.forEach(labelProfile);
  $('fleetTitle').textContent=homes.some(h=>h.measurement?.kind==='zip-benchmark')?'ZIP readiness scenarios':'Measured profile readiness';
  const known=homes.filter(h=>h.online),budgets=known.map(h=>viewBudget(h)),ready=budgets.filter(b=>b.targetMet).length,coverage=budgets.reduce((s,b)=>s+Math.min(outage?Math.max(0,cfg.duration-outage.elapsed):cfg.duration,b.runtime??cfg.duration),0),peak=plan?Math.max(0,...plan.trace.map(t=>t.total)):null;
- let metrics=[['MODELED PROFILES MEETING TARGET',ready+' / '+homes.length,`${homes.length-known.length} unknown · ${known.length-ready} known shortfalls`],['ESSENTIAL & RETAINED LOAD COVERAGE',fmt(coverage)+' h','Sum of modeled profile-hours, capped at target'],['PLAN STATUS',approved?'Approved':plan?'Review needed':'Not generated',outage?`${fmt(outage.elapsed)} / ${cfg.duration} hours replayed`:'No real commands sent']];
+ let metrics=[['MODELED PROFILES MEETING TARGET',ready+' / '+homes.length,`${homes.length-known.length} unknown · ${known.length-ready} known shortfalls`],['ESSENTIAL & RETAINED LOAD COVERAGE',fmt(coverage)+' h','Sum of modeled profile-hours, capped at target'],['PREVIEW STATUS',approved?'Approved':plan?'Updated':'Awaiting data',outage?`${fmt(outage.elapsed)} / ${cfg.duration} hours replayed`:'No real commands sent']];
  if(mode==='everyday'){const day=P.everyday(homes,{...cfg,duration:prices.dailyReserve},prices);metrics=[['INDICATIVE GRID EXPORT',fmt(day.exportKwh)+' kWh','After household reserve protection; energy-only estimate'],['MODELED CONTRIBUTION','$'+day.margin.toFixed(2),'Export credit less future recharge cost; illustrative prices'],['PROTECTED PROFILES',known.length+' / '+homes.length,'Unknown capacity excluded · no actual utility dispatch']];}
  $('metrics').innerHTML=metrics.map(m=>`<div class="metric"><span class="small">${m[0]}</span><strong>${m[1]}</strong><span class="small">${m[2]}</span></div>`).join('');
  $('modeTitle').textContent={shield:'Find the gentlest relief.',prepare:'Prepare before disruption.',outage:'Make stored energy last.',everyday:'Support the grid with care.'}[mode];
  $('modeDescription').textContent={shield:'Fleet dispatcher: reduce a modeled neighborhood constraint without touching external critical loads.',prepare:'Fleet dispatcher: allocate limited charging headroom and verify household readiness.',outage:'Fleet dispatcher: set a duration target, apply accepted reductions, and escalate shortfalls.',everyday:'Second customer: utility demand-response dispatcher evaluating peak relief on an ordinary Tuesday.'}[mode];
  $('shieldControls').hidden=mode!=='shield';$('outageControls').hidden=mode!=='outage';$('priceControls').hidden=mode!=='everyday';$('approve').disabled=!plan||approved||!!outage;$('plan').disabled=!!outage;$('projected').disabled=!!outage;$('startOutage').disabled=!!outage;$('advance').disabled=!outage||outage.elapsed>=cfg.duration;$('finish').disabled=$('advance').disabled;
- $('banner').textContent=mode==='everyday'?'Ordinary Tuesday scenario: estimated export uses only stored energy above the modeled household reserve. Prices and market access are assumptions. Household service during the event and inverter power constraints require separate validation.':outage?`OUTAGE SIMULATOR · ${fmt(outage.elapsed)} hours elapsed. ${ready} known profiles can cover the remaining target; ${known.length-ready} need follow-up. Unknown devices remain unverified to the dispatcher. Local simulator state is shown separately.`:`${cfg.duration}-hour target, ${cfg.lead}-hour preparation window, ${cfg.headroom} kW charging headroom. Resident load shares and battery state are scenario inputs. ${approved?'Preparation approved for simulation.':plan?'Projected plan ready for review.':'Generate a plan after recording resident flexibility.'}`;
- document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));renderMap();renderDetail();renderChart();if(typeof renderAdvanced==='function')renderAdvanced();if(typeof PowerupVisual!=='undefined')PowerupVisual.sync();
+ $('banner').textContent=mode==='everyday'?'Ordinary Tuesday scenario: estimated export uses only stored energy above the modeled household reserve. Prices and market access are assumptions. Household service during the event and inverter power constraints require separate validation.':outage?`OUTAGE SIMULATOR · ${fmt(outage.elapsed)} hours elapsed. ${ready} known profiles can cover the remaining target; ${known.length-ready} need follow-up. Unknown devices remain unverified to the dispatcher. Local simulator state is shown separately.`:`${cfg.duration}-hour target, ${cfg.lead}-hour preparation window, ${cfg.headroom} kW charging headroom. Resident load shares and battery state are scenario inputs. ${approved?'Preparation approved for simulation.':plan?'Preview updated automatically; ready for review.':'Valid input changes recalculate the preview automatically.'}`;
+ document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));renderMap();renderDetail();renderChart();if(typeof renderAdvanced==='function')renderAdvanced();if(typeof PowerupVisual!=='undefined')PowerupVisual.sync();bindAutomaticInputs();
 }
 function renderMap(){
  if(typeof PowerupScene!=='undefined'){PowerupScene.render($('map'),{homes,selected,viewBudget,projectedEnergy,select:id=>{selected=id;renderMap();renderDetail();}});return;}
@@ -86,20 +99,20 @@ function renderDetail(){const h=homes.find(h=>h.id===selected),b=viewBudget(h),e
  $('disconnect').onclick=()=>{h.online=!h.online;approved=false;plan=null;if(outage){outage.devices.find(d=>d.id===h.id).offline=!h.online;log(h.name+': '+(h.online?'simulated reconnection.':'connection lost. Dispatcher state unknown; local simulator policy remains in effect.'));render();}else changed(h.name+': '+(h.online?'simulated connection restored.':'connection lost; unknown capacity excluded.'));};
  document.querySelectorAll('[data-consent]').forEach(el=>{el.value=h.loads.find(l=>l.id===el.dataset.consent).consent;el.onchange=e=>{const l=h.loads.find(l=>l.id===el.dataset.consent);if(l.id==='essential')return;l.consent=e.target.value;l.consentHours=l.consent==='accepted'?(l.consentHours||6):0;changed(h.name+': simulated resident '+l.consent+' '+l.name+' reduction.');};});
  document.querySelectorAll('[data-load]').forEach(el=>el.onchange=e=>{if(!el.reportValidity())return;const l=h.loads.find(l=>l.id===el.dataset.load);l.kw=+el.value;if(l.id!=='essential'){l.consent='unasked';l.consentHours=0;}changed(h.name+': load estimate changed; flexible-load permission must be reconfirmed.');});
- $('requestFlex').onclick=()=>{log(h.name+': flexibility request created in demo. Waiting for explicit responses; no message sent.');if(typeof showRequestPreview==='function')showRequestPreview(h);};document.querySelectorAll('[data-window]').forEach(el=>el.onchange=()=>{if(!el.reportValidity())return;h.loads.find(l=>l.id===el.dataset.window).consentHours=+el.value;changed(h.name+': resident consent window updated.');});document.querySelectorAll('[data-gridconsent]').forEach(el=>el.onchange=()=>{h.loads.find(l=>l.id===el.dataset.gridconsent).gridAccepted=el.checked;changed(h.name+': grid-support reduction permission updated.');});if(typeof renderExtraDetail==='function')renderExtraDetail(h);
+ $('requestFlex').onclick=()=>{log(h.name+': flexibility request created in demo. Waiting for explicit responses; no message sent.');if(typeof showRequestPreview==='function')showRequestPreview(h);};document.querySelectorAll('[data-window]').forEach(el=>el.onchange=()=>{if(!el.reportValidity())return;h.loads.find(l=>l.id===el.dataset.window).consentHours=+el.value;changed(h.name+': resident consent window updated.');});document.querySelectorAll('[data-gridconsent]').forEach(el=>el.onchange=()=>{h.loads.find(l=>l.id===el.dataset.gridconsent).gridAccepted=el.checked;changed(h.name+': grid-support reduction permission updated.');});if(typeof renderExtraDetail==='function')renderExtraDetail(h);bindAutomaticInputs();
 }
 function renderChart(){
  if(mode==='shield'){renderShield();return;}
  if(mode==='everyday'){const day=P.everyday(homes,{...cfg,duration:prices.dailyReserve},prices);$('chartTitle').textContent='Grid support above protected reserves';$('chartLabel').textContent='Illustrative economics · not an export commitment';$('chart').innerHTML=day.homes.map(row=>`<div class="listitem"><b>${safe(homes.find(h=>h.id===row.id).name)}</b> · ${row.online?fmt(row.exportKwh)+' kWh indicative export · $'+row.margin.toFixed(2)+' contribution':'Unknown; excluded'}<div class="small">Protected stored reserve: ${fmt(row.reserveKwh)} kWh</div></div>`).join('');return;}
  if(mode==='outage'){$('chartTitle').textContent='Runtime and target';$('chartLabel').textContent=outage?'Local simulation replay':'Before outage simulation';$('chart').innerHTML=homes.map(h=>{const b=viewBudget(h),width=Math.min(100,100*(b.runtime??cfg.duration)/cfg.duration);return `<div class="listitem"><b>${safe(h.name)}</b> · ${h.online?fmt(b.runtime)+' hours · target '+(outage?fmt(Math.max(0,cfg.duration-outage.elapsed)):cfg.duration)+'h':'Unknown to dispatcher'}<div class="bar"><div style="width:${width}%;background:${b.targetMet?'#168366':'#2672c7'}"></div></div></div>`;}).join('');return;}
- $('chartTitle').textContent='Stagger preparation, avoid a new peak';$('chartLabel').textContent=plan?`${fmt(Math.max(0,...plan.trace.map(t=>t.total)))} kW peak / ${cfg.headroom} kW headroom`:'Generate a plan';
- if(!plan){$('chart').innerHTML='<p class="small">Record resident flexibility, then build a plan. The chart will compare charging all homes at once with the coordinated schedule.</p>';return;}
+ $('chartTitle').textContent='Stagger preparation, avoid a new peak';$('chartLabel').textContent=plan?`${fmt(Math.max(0,...plan.trace.map(t=>t.total)))} kW peak / ${cfg.headroom} kW headroom`:'Updates automatically';
+ if(!plan){$('chart').innerHTML='<p class="small">Waiting for valid demand inputs and settings. Calculations update automatically.</p>';return;}
  const energy=homes.map(h=>h.energy),taskEnergy=Object.fromEntries(homes.flatMap(h=>(h.prepTasks||[]).map(task=>[h.id+':'+task.id,task.kwh]))),baseline=plan.trace.map(t=>{let sum=0;homes.forEach((h,i)=>{if(!h.online)return;const target=plan.homes.find(x=>x.id===h.id).target,kw=Math.max(0,Math.min(h.rate,(target-energy[i])/(P.ETA*t.dt)));sum+=kw;energy[i]+=kw*P.ETA*t.dt;for(const task of (h.prepTasks||[]).filter(t=>t.enabled&&t.accepted)){const key=h.id+':'+task.id,kw=Math.min(task.rate,taskEnergy[key]/t.dt);sum+=kw;taskEnergy[key]-=kw*t.dt;}});return sum;});
  const coordinated=plan.trace.map(t=>t.total),max=Math.max(1,cfg.headroom,...baseline),x=i=>40+650*i/Math.max(1,baseline.length-1),y=v=>140-v/max*120,path=values=>values.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
  $('chart').innerHTML=`<svg viewBox="0 0 730 175" role="img" aria-label="Uncoordinated versus coordinated charging power"><path d="M40 140H710M40 80H710M40 20H710" stroke="#e5e9df"/><path d="M40 ${y(cfg.headroom)}H710" stroke="#9ba58e" stroke-dasharray="4 4"/><path d="${path(baseline)}" fill="none" stroke="#bdafa0" stroke-width="2.5"/><path d="${path(coordinated)}" fill="none" stroke="#2672c7" stroke-width="3"/><text x="0" y="25" font-size="10" fill="#7a8574">${fmt(max)}</text><text x="40" y="166" font-size="10" fill="#7a8574">Now</text><text x="650" y="166" font-size="10" fill="#7a8574">+${cfg.lead}h</text></svg><div class="small">Blue: coordinated · gray: all-at-once. Both include the same batteries and optional preparation tasks. The gray strategy can exceed available charging headroom.</div>`;
 }
 function build(){if(!homes.length){$('banner').textContent='Load real demand records first.';return;}if(!['duration','lead','headroom','floor'].every(id=>$(id).reportValidity()))return;try{plan=P.prepare(homes,cfg);approved=false;$('projected').checked=true;log('Preparation calculated. Only accepted flexibility influences reductions. Shortfalls require follow-up.');render();}catch(e){$('banner').textContent=e.message;}}
-$('plan').onclick=build;$('projected').onchange=render;
+$('plan').hidden=true;$('plan').onclick=build;$('projected').onchange=render;
 $('approve').onclick=()=>{const online=plan.homes.filter(h=>h.online),unmet=online.filter(h=>!h.budget.targetMet).length;$('reviewText').textContent=`${online.length-unmet} known profiles meet the target; ${unmet} have unmet needs; ${homes.length-online.length} are unknown. Proposed load reductions require the recorded simulated resident permissions. Approve for replay?`;$('review').showModal();};
 $('confirm').onclick=()=>{approved=true;$('review').close();log('Dispatcher approved the simulated preparation and consent-aware load plan. No real commands sent.');render();};$('cancel').onclick=()=>$('review').close();
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;render();});
