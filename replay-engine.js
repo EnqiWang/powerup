@@ -306,9 +306,9 @@
     const fleet = [];
     const proposals = { restore: [], ev: [], unmet: [] };
     let restorePlan = null;
-    const totals = { savings: 0, readiness: 0, protectedHours: 0, mbHours: 0, evProposed: 0, evApproved: 0, evHoursBought: 0, unmet: 0 };
+    const totals = { savings: 0, readiness: 0, chargingCost: 0, chargingKwh: 0, protectedHours: 0, mbHours: 0, evProposed: 0, evApproved: 0, evHoursBought: 0, unmet: 0 };
     const zoneTowerDown = new Uint8Array(6);
-    const dayAgg = { day: -1, savings: 0, readiness: 0 };
+    const dayAgg = { day: -1, savings: 0, readiness: 0, chargingCost: 0, chargingKwh: 0 };
     const narrative = new Array(HOURS);
 
     const perHomeLoad = (bi, hour) => P.daily_use_kwh * bat[bi].factor * prof[bat[bi].circuit].shape[hour];
@@ -336,7 +336,7 @@
     for (let h = 0; h < HOURS; h++) {
       const hour = h % 24, day = Math.floor(h / 24);
       const onPeak = hour >= onPk[0] && hour < onPk[1];
-      if (dayAgg.day !== day) { dayAgg.day = day; dayAgg.savings = 0; dayAgg.readiness = 0; }
+      if (dayAgg.day !== day) { dayAgg.day = day; dayAgg.savings = 0; dayAgg.readiness = 0; dayAgg.chargingCost = 0; dayAgg.chargingKwh = 0; }
       const rung = h >= handH ? 'hand' : h >= holdH ? 'hold' : h >= fillH ? 'fill' : h >= askH ? 'ask' : h >= watchH ? 'watch' : 'none';
 
       // restoration plan at the hand rung
@@ -548,6 +548,12 @@
             soc[idx] = s; status[idx] = stt; mode[idx] = curMode[bi]; chan[idx] = ch; flags[idx] = fl;
           }
         }
+        // One-hour steps: grid charging kW * 1 h * the rate for this hour.
+        // Gross charging expense, not incremental readiness cost or a household bill.
+        // The replay assumes lossless charging and starts with unpriced stored energy.
+        const chargingCost = chargeKW * (onPeak ? P.on_peak : P.off_peak);
+        totals.chargingKwh += chargeKW; dayAgg.chargingKwh += chargeKW;
+        totals.chargingCost += chargingCost; dayAgg.chargingCost += chargingCost;
         cc.chargeKW[h] = chargeKW;
         cc.gridA[h] = st === 1 ? 0 : gridBase + chargeKW / KW_PER_UNIT;
       }
@@ -557,6 +563,8 @@
       const f = { h, rung, byStatus: new Array(STATUS.length).fill(0), byChan: new Array(CHAN.length).fill(0), byMode: [0, 0, 0], gridBack: 0, stillOff: 0,
         power: 0, mbPower: 0, mbTotal: 0, mbEmpty: 0, socSum: 0, savingsDay: dayAgg.savings, readinessDay: dayAgg.readiness,
         savingsCum: totals.savings, readinessCum: totals.readiness, protectedCum: totals.protectedHours, mbHoursCum: totals.mbHours,
+        chargingCostDay: dayAgg.chargingCost, chargingCostCum: totals.chargingCost,
+        chargingKwhDay: dayAgg.chargingKwh, chargingKwhCum: totals.chargingKwh,
         faultsActual: 0, faults: 0, zonesDown: 0, zonesSilent: 0, towerDown: Array.from(zoneTowerDown), heldCount: 0, evProposed: totals.evProposed, evApproved: totals.evApproved, evHoursBought: totals.evHoursBought, unmet: totals.unmet,
         held: 0, filling: 0, full: 0, circuitsOff: 0, replanned: 0 };
       for (let bi = 0; bi < N; bi++) {

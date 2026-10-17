@@ -13,6 +13,7 @@ const CHAN_LABEL = ['home internet', 'SMS (cell)', 'mesh to Starlink', 'silent: 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const fmtInt = n => Math.round(n).toLocaleString();
 const money = n => '$' + Math.round(n).toLocaleString();
+const costMoney = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '0%';
 const clock12 = h => { const hh = ((h + 11) % 12) + 1; return `${hh} ${h < 12 ? 'AM' : 'PM'}`; };
 const pmRange = ([a, b]) => (a >= 12 && b > 12 && b <= 24) ? `${((a + 11) % 12) + 1} to ${((b + 11) % 12) + 1} PM` : `${clock12(a)} to ${clock12(b % 24)}`;
@@ -776,10 +777,13 @@ function renderFleet() {
   $('protectRows').innerHTML = pr.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
   const perHome = N ? f.savingsDay / N : 0;
   const mr = [];
-  mr.push(['Savings today', `${money(f.savingsDay)} fleet, $${perHome.toFixed(2)} per home`]);
-  mr.push(['Since Oct 7', money(f.savingsCum)]);
-  mr.push(['Cost of readiness today', `${money(f.readinessDay)} (${fmtInt(f.byStatus[S.held] + f.byStatus[S.filling])} homes held)`]);
-  mr.push(['Readiness since Oct 7', money(f.readinessCum)]);
+  mr.push(['Battery charging cost since Oct 7', `${costMoney(f.chargingCostCum)} fleet · ${fmtInt(f.chargingKwhCum)} kWh bought`]);
+  mr.push(['Battery charging cost today', `${costMoney(f.chargingCostDay)}${f.chargingKwhDay === 0 ? ' · no grid charging today so far' : ` · ${fmtInt(f.chargingKwhDay)} kWh bought`}`]);
+  mr.push(['Estimated bill savings today', `${costMoney(f.savingsDay)} fleet, $${perHome.toFixed(2)} per home`]);
+  mr.push(['Estimated bill savings since Oct 7', costMoney(f.savingsCum)]);
+  mr.push(['Missed savings to keep backup today', `${costMoney(f.readinessDay)}${outage ? ' · pre-outage accounting only' : ' · peak-hour estimate'}`]);
+  mr.push(['Missed savings since Oct 7', costMoney(f.readinessCum)]);
+  mr.push(['What these costs mean', 'Charging cost counts all battery charging, not just extra outage preparation. Missed savings are an opportunity-cost estimate, not another charge. Savings already allow for off-peak energy: do not subtract charging cost again. Initial stored energy, losses, battery wear and fixed fees are not priced.']);
   mr.push(['Rates (assumed)', `on-peak ${pmRange(P.on_peak_hours)}, $${P.on_peak.toFixed(2)} / $${P.off_peak.toFixed(2)} per kWh`]);
   $('moneyRows').innerHTML = mr.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
 }
@@ -1009,7 +1013,7 @@ function renderMath() {
   }
   // 2. ordinary day
   rows.push([`2. Ordinary day, ${f.rung === 'none' ? 'today' : 'before the ladder'}`,
-    `off-peak: charge at up to ${P.charge_kw} kW to 100% inside the headroom. on-peak ${P.on_peak_hours[0] - 12} to ${P.on_peak_hours[1] - 12} PM: discharge = min(home load, soc - floor, ${P.power_kw} kW); floor ${P.reserve_floor_pct}% = ${(P.capacity_kwh * P.reserve_floor_pct / 100).toFixed(1)} kWh (${P.ask_floor_pct}% for Tier 3 on a named circuit from Ask). saving = on-peak kWh served x ($${P.on_peak.toFixed(2)} - $${P.off_peak.toFixed(2)}). Today so far: <b>${money(f.savingsDay)}</b> fleet, $${(sim.N ? f.savingsDay / sim.N : 0).toFixed(2)} per home; a held home forfeits that: readiness cost today <b>${money(f.readinessDay)}</b> (${fmtInt(f.byStatus[S.held] + f.byStatus[S.filling])} homes held or filling). As Base and Tesla already do.`]);
+    `off-peak: charge at up to ${P.charge_kw} kW to 100% inside the headroom. on-peak ${P.on_peak_hours[0] - 12} to ${P.on_peak_hours[1] - 12} PM: discharge = min(home load, soc - floor, ${P.power_kw} kW); floor ${P.reserve_floor_pct}% = ${(P.capacity_kwh * P.reserve_floor_pct / 100).toFixed(1)} kWh (${P.ask_floor_pct}% for Tier 3 on a named circuit from Ask). saving = on-peak kWh served x ($${P.on_peak.toFixed(2)} - $${P.off_peak.toFixed(2)}). Today so far: <b>${money(f.savingsDay)}</b> fleet, $${(sim.N ? f.savingsDay / sim.N : 0).toFixed(2)} per home; a held home forfeits that: estimated missed savings today <b>${costMoney(f.readinessDay)}</b> (${fmtInt(f.byStatus[S.held] + f.byStatus[S.filling])} homes held or filling). As Base and Tesla already do.`]);
   // 3. budget mode: the inputs the engine used at the shutoff hour (charge entering it, planned length), then this hour's check
   {
     const ex = pinnedId >= 0 && world.homes[pinnedId].battery ? world.homes[pinnedId] : null;
