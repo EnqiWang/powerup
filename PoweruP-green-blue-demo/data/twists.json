@@ -1,0 +1,159 @@
+{
+  "schema": "powerup.twists.v1",
+  "note": "Single source for demo scenarios, critical loads and twists. Every number here is ASSUMED unless its provenance says REAL. Edit this file to add a twist; no code change needed for the effect types listed in effectTypes.",
+  "battery": {
+    "model": "Base Core (spec used by the engine)",
+    "capacityKwh": 39.2,
+    "capacityProvenance": "REAL — published Base Core usable capacity used by engine.js",
+    "chargeKw": 3,
+    "exportKw": 3,
+    "powerProvenance": "ASSUMED — charge/export power is a scenario setting, not a Base spec",
+    "startSocProvenance": "ASSUMED — 30% starting state of charge (engine default 11.76 kWh)"
+  },
+  "baseCase": {
+    "label": "LA ZIP fleet · fire-weather PSPS planning case",
+    "cfg": { "duration": 72, "lead": 18, "headroom": 8, "floor": 0.2 },
+    "prices": { "buy": 0.15, "sell": 0.4, "eventHours": 2, "dailyReserve": 6 },
+    "shield": { "feederCapacity": 20, "reliefHours": 2 },
+    "residentsOptIn": true,
+    "provenance": "ASSUMED — horizon, lead time, feeder headroom, prices and resident consent are scenario inputs"
+  },
+  "criticalLoads": [
+    {
+      "id": "cold",
+      "inputId": "coldKw",
+      "name": "Cold storage (scenario)",
+      "kw": 8,
+      "graceHours": 1,
+      "provenance": "ASSUMED",
+      "note": "Illustrative grocery/pharmacy cold room. Load and grace period assumed."
+    },
+    {
+      "id": "cell",
+      "inputId": "commsKw",
+      "name": "Cell site (scenario)",
+      "kw": 3,
+      "graceHours": 0,
+      "provenance": "ASSUMED",
+      "note": "Illustrative macro cell site. Load assumed; no carrier data."
+    },
+    {
+      "id": "port",
+      "inputId": "portKw",
+      "name": "Port of Long Beach berth lighting/security (ASSUMED, scaled)",
+      "kw": 6,
+      "graceHours": 0,
+      "provenance": "ASSUMED",
+      "note": "Scaled illustrative load only. Not Port of Long Beach data; PoweruP does not control, power or protect port equipment."
+    }
+  ],
+  "effectTypes": {
+    "cfg": "Override planning constraints {duration, lead, headroom, floor}",
+    "shield": "Override relief inputs {feederCapacity, reliefHours}",
+    "loadScale": "Multiply a household load allowance by id {cooling: 1.6}",
+    "criticalLoads": "Override critical-load fields by id {port: {kw: 10}}",
+    "silent": "Batteries stop reporting [{home, evidence}] — classified by advanced.js classifySilent",
+    "spoof": "Telemetry looks online but fails integrity checks [homeId] — excluded from capacity"
+  },
+  "twists": [
+    {
+      "id": "harbor-night",
+      "name": "Harbor night shift",
+      "summary": "Night berth load and cold-chain demand rise on a constrained feeder.",
+      "provenance": "ASSUMED",
+      "effects": {
+        "shield": { "feederCapacity": 16, "reliefHours": 4 },
+        "criticalLoads": { "port": { "kw": 10 }, "cold": { "kw": 9 } }
+      }
+    },
+    {
+      "id": "heat-wave",
+      "name": "Heat wave",
+      "summary": "Cooling allowance +60% and a 48-hour horizon.",
+      "provenance": "ASSUMED",
+      "evidenceAlert": "Heat Advisory",
+      "effects": {
+        "cfg": { "duration": 48 },
+        "loadScale": { "cooling": 1.6 }
+      }
+    },
+    {
+      "id": "spoofed-telemetry",
+      "name": "Spoofed telemetry",
+      "summary": "Home 3 reports 100% charge with a failed signature; capacity is excluded until verified.",
+      "provenance": "ASSUMED",
+      "effects": {
+        "spoof": [3]
+      }
+    },
+    {
+      "id": "cell-outage",
+      "name": "Cell outage",
+      "summary": "Network B goes dark: homes 2 and 4 stop reporting; cell site has zero grace.",
+      "provenance": "ASSUMED",
+      "effects": {
+        "silent": [
+          { "home": 2, "evidence": { "fresh": false, "voltage": 120, "breaker": "unknown", "fault": false } },
+          { "home": 4, "evidence": { "fresh": false, "voltage": 120, "breaker": "unknown", "fault": false } }
+        ],
+        "criticalLoads": { "cell": { "kw": 4, "graceHours": 0 } }
+      }
+    }
+  ],
+  "demoScript": [
+    {
+      "id": "tuesday",
+      "title": "Ordinary Tuesday",
+      "seconds": 22,
+      "caption": "Six LA ZIPs, real SCE June-2024 usage. On a normal day the Base Core fleet sells stored energy above each home's protected reserve during the evening peak."
+    },
+    {
+      "id": "dispatcher",
+      "title": "Second customer: utility DR dispatcher",
+      "seconds": 22,
+      "caption": "Same fleet, second buyer. A demand-response dispatcher asks for feeder relief: accepted load deferrals first, battery energy above reserve second, the rest handed back."
+    },
+    {
+      "id": "fire",
+      "title": "Fire-weather warning",
+      "seconds": 22,
+      "caption": "A fire-weather shutoff warning arrives (scenario; the bundled NWS snapshot is shown for context). Residents get a reviewed Prepare-now alert. Simulated outbox only, nothing is sent."
+    },
+    {
+      "id": "prepare",
+      "title": "Staggered preparation vs 4 PM rush",
+      "seconds": 26,
+      "caption": "If everyone plugs in at 4 PM, demand spikes past the feeder's spare capacity. PoweruP staggers charging over 18 hours, most at-risk homes first, inside the shared limit."
+    },
+    {
+      "id": "approve",
+      "title": "Dispatcher approves the budget",
+      "seconds": 18,
+      "caption": "A human approves the plan. Only loads residents accepted can be reduced; essential loads are never touched. No real commands are sent."
+    },
+    {
+      "id": "outage",
+      "title": "Outage hours 0–72",
+      "seconds": 24,
+      "caption": "Power goes out at 6 PM. Each home now has a grace-period budget: how many kW it can draw so essential loads last the full 72 hours."
+    },
+    {
+      "id": "silent",
+      "title": "3 AM: connection loss",
+      "seconds": 26,
+      "caption": "At 3 AM four batteries go quiet. They keep following the local plan they already have. PoweruP sorts them: not talking, breaker tripped, or broken, and stops counting them as verified capacity."
+    },
+    {
+      "id": "handoff",
+      "title": "Handoff to the operator",
+      "seconds": 22,
+      "caption": "What the fleet cannot cover goes to a human operator, with every decision logged: home shortfalls, silent batteries, and critical loads with no grace period."
+    }
+  ],
+  "demoSilent": [
+    { "home": 2, "evidence": { "fresh": false, "voltage": 120, "breaker": "unknown", "fault": false } },
+    { "home": 4, "evidence": { "fresh": false, "voltage": 120, "breaker": "unknown", "fault": false } },
+    { "home": 3, "evidence": { "fresh": true, "voltage": 120, "breaker": "tripped", "fault": false } },
+    { "home": 5, "evidence": { "fresh": true, "voltage": 0, "breaker": "closed", "fault": true } }
+  ]
+}
