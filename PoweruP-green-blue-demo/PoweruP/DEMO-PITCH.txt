@@ -1,0 +1,33 @@
+PoweruP — prepare earlier, preserve essential service
+
+One person: a home-battery fleet dispatcher.
+One bad moment: a warning window shrinks and there is insufficient capacity
+to prepare every household identically.
+One action: approve an explainable preparation and household energy budget,
+with remaining shortfalls explicitly handed to an operator.
+
+Ordinary-day second customer: a utility demand-response dispatcher evaluating
+residential peak relief above household reserves.
+
+Show, in order:
+Measured household provenance -> weather review -> resident time windows ->
+shared-headroom preparation -> approval -> outage budget -> connection loss.
+Then show the same reserve model in Ordinary Tuesday mode.
+
+What is real: historical household grid-import records after a successful
+OPSD import; actual NWS forecasts/alerts after a successful live fetch;
+published Base Core total capacity; documented historical LA outage context.
+What is assumed: LA feeder topology/headroom, battery charge, device shares,
+priorities, consent, EV/thermal tasks, prices, auxiliary observations, controls.
+No claim of actual LA Base customers, a calibrated outage predictor, protected
+ports during a shutoff, messages sent, guaranteed 72-hour service or bill savings.
+
+For each twist: state the changed input, show the computed response, and
+retain/export the decision trail. No need to guess future organizer twists.
+
+OPTIONAL 30-SECOND RESIDENT ALERT DEMO
+Resident alerts -> Load demo subscribers -> Review preparation alert ->
+Send to demo outbox -> Jump to next reminder -> Jump to next reminder.
+Say: "People prepare too. We target the resident's registered home ZIP, not
+their phone prefix. The dispatcher reviews an estimated window; residents get
+a checklist and an EV pause reminder. All delivery here is simulated."
