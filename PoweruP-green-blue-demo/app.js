@@ -11,7 +11,21 @@ function decorate(h){labelProfile(h);h.gridParticipation=!!h.gridParticipation;h
 let weatherSnapshot=null;
 let homes=[],selected=null,mode='prepare',cfg={duration:24,lead:6,headroom:8,floor:.2},prices={buy:.15,sell:.4,eventHours:2,dailyReserve:6},plan=null,approved=false,outage=null,source=null,events=[];
 function log(message){events.unshift({time:new Date().toLocaleTimeString(),message});events=events.slice(0,50);$('log').innerHTML=events.map(e=>`<div class="event"><time>${safe(e.time)}</time>${safe(e.message)}</div>`).join('');}
-function changed(reason){plan=null;approved=false;outage=null;log(reason+' Previous approval and outage replay cleared.');render();}
+function changed(reason) {
+  const hadPlan = Boolean(plan);
+
+  plan = null;
+  approved = false;
+  outage = null;
+
+  log(reason + ' Previous approval cleared.');
+
+  if (hadPlan && homes.length) {
+    build();
+  } else {
+    render();
+  }
+}
 function projectedEnergy(h){if(outage)return outage.devices.find(d=>d.id===h.id).energy;return $('projected').checked&&plan?plan.homes.find(x=>x.id===h.id).energy:h.energy;}
 function viewBudget(h){if(outage)return P.outageBudget(outage.devices.find(d=>d.id===h.id),outage.elapsed,cfg.duration);return P.budget(h,cfg,projectedEnergy(h));}
 
