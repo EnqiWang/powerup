@@ -55,9 +55,7 @@ A caption bar narrates each step, and a timeline strip shows the Bryson events. 
 
 **After the replay:**
 - Switch **REGION** to run the same engine on another region.
-- Toggle a **twist** chip.
 - Open **Pilot & Funding** in the left rail.
-- Press **Poster ↗**.
 
 **If something breaks on stage:** press → (each step sets up what it needs), or reload `/?demo=1&map=0`.
 
@@ -110,7 +108,7 @@ chrome --headless=new --hide-scrollbars --virtual-time-budget=15000 --window-siz
 |---|---|
 | `engine.js`, `advanced.js` | Planning engine: budgets, staggered prep, outage replay, relief, `classifySilent` |
 | `demo-model.js` | Pure helpers: offline snapshot router, headline metrics, scenario/region loaders and validators, fleet builder, recharge model, `runScenario` |
-| `demo.js`, `demo.css` | Metrics bar, region picker, twists, Run-demo replay, timeline strip, Pilot & Funding, decision-trail export |
+| `demo.js`, `demo.css` | Metrics bar, region picker, Run-demo replay, timeline strip, Pilot & Funding, decision-trail export |
 | `scenarios/bryson_malibu_2026.json` | Hero scenario: events with sources, circuits, fleet, demo captions |
 | `config/regions/`, `config/funding.json`, `config/poster.json` | Twist configs |
 | `data/twists.json` | Critical loads + extra twists (harbor night, heat wave, spoofed telemetry, cell outage) |

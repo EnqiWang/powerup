@@ -57,11 +57,13 @@ test("initial theme defaults to light while honoring a saved choice", () => {
   assert.doesNotMatch(ui, /prefers-color-scheme/);
 });
 
-test("scenario controls auto-load the demo fleet and omit the assumed heading", () => {
+test("dashboard omits poster links and twist controls", () => {
   const demo = fs.readFileSync(path.join(root, "demo.js"), "utf8");
-  assert.match(demo, /TRY A SCENARIO/);
-  assert.doesNotMatch(demo, /TWISTS <i class="prov assumed">ASSUMED<\/i>/);
-  assert.match(demo, /if \(!homes\.length\) \{\s*(setupFleet\(\)|loadRegion\(region\.id\));/);
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  for (const src of [demo, html]) {
+    assert.doesNotMatch(src, /poster\.html|data-twist|twistBar|TRY A SCENARIO|toggleTwist/);
+  }
+  assert.match(demo, /actions\.prepend\(run, toggle\)/);
 });
 
 test("headline metrics are finite and carry provenance badges", () => {

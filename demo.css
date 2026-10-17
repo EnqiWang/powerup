@@ -1,19 +1,4 @@
 /* Demo layer styles (demo.js, scene.js fallback). Kept separate from style.css. Uses theme tokens. */
-.scenario-help {
-  flex-basis: 100%;
-  margin-top: 4px;
-  color: var(--muted);
-}
-.scenario-help summary {
-  font-size: 12px;
-  color: var(--muted);
-}
-.scenario-help p {
-  max-width: 850px;
-  margin: 8px 0;
-  font-size: 12px;
-  line-height: 1.6;
-}
 .headline {
   position: sticky;
   top: 0;
@@ -103,46 +88,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.twistbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.twist-title {
-  color: var(--muted);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-}
-.twist {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  padding: 5px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel);
-  cursor: pointer;
-}
-.twist.on {
-  border-color: var(--amber);
-  color: var(--amber);
-}
-.twist .trail {
-  padding: 2px 7px;
-  font-size: 11px;
-}
 .run {
   font-weight: 700;
-}
-.button-link {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  color: var(--ink);
-  text-decoration: none;
 }
 .captionbar {
   position: fixed;

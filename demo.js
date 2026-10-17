@@ -1,4 +1,4 @@
-/* PoweruP demo layer: headline metrics bar, region picker, twist toggles, Pilot & Funding tab,
+/* PoweruP demo layer: headline metrics bar, region picker, Pilot & Funding tab,
    decision-trail export and the one-click narrated "Run demo" replay (Bryson Fire by default).
    Drives the existing app through its own functions; planning stays in engine.js / advanced.js.
    Nothing here sends real commands or messages. */
@@ -12,9 +12,6 @@
     scenario = null,
     snaps = null,
     funding = null,
-    active = [],
-    twistBase = null,
-    trail = [],
     frozen = null;
   const demo = { i: -1, playing: false, t: 0, last: 0, timer: null, done: {} };
   const steps = () => scenario?.demo || [];
@@ -55,9 +52,6 @@
     for (const l of state.criticalLoads) $(l.inputId).value = l.kw;
     C.criticalLoads = state.criticalLoads;
   }
-  function snapshotState() {
-    return P.clone({ homes, cfg, shield: shieldValues(), criticalLoads: C.criticalLoads });
-  }
   function metrics(hs = homes, c = cfg, pl = plan) {
     try {
       return hs.length ? M.headline(hs, c, prices, pl, { medicalLabel: region?.medicalLabel, currency: region?.currency }) : null;
@@ -72,9 +66,6 @@
     scenario = region.scenarioData;
     outage = null;
     approved = false;
-    active = [];
-    twistBase = null;
-    trail = [];
     homes = M.acceptConsent(
       M.buildFleet(scenario, snaps).map((h) => decorate(h)),
       scenario.cfg.duration,
@@ -101,7 +92,6 @@
     document.body.classList.toggle("region-synthetic", synthetic());
     changed(`Region: ${region.name} (${region.provenance}). Scenario: ${scenario.title}.`);
     renderRegionPicker();
-    renderTwists();
     renderFunding();
   }
   function renderRegionPicker() {
@@ -152,47 +142,7 @@
       .join("");
   }
 
-  // ---------- twists ----------
-  function renderTwists() {
-    const box = $("twistBar");
-    if (!box || !C) return;
-    const alerts = (weatherSnapshot || snaps?.nws)?.alerts || [];
-    box.innerHTML =
-      '<span class="twist-title">TRY A SCENARIO</span>' +
-      C.twists
-        .map((t) => {
-          const on = active.includes(t.id),
-            ev = !synthetic() && t.evidenceAlert && alerts.find((a) => a.event === t.evidenceAlert);
-          return `<label class="twist ${on ? "on" : ""}" title="${safe(t.summary)}"><input type="checkbox" data-twist="${t.id}" ${on ? "checked" : ""}> ${safe(t.name)}${ev ? ' <i class="prov real" title="Bundled NWS response">NWS: ' + safe(ev.event) + "</i>" : ""}${on ? `<button class="trail" data-trail="${t.id}" title="Export decision trail for this twist">⇩ trail</button>` : ""}</label>`;
-        })
-        .join("") +
-      '<details class="scenario-help"><summary>What do these scenarios change?</summary><p>Try an example problem and see how the plan changes. Check a scenario to turn it on; uncheck it to undo its effects. These are demo events.</p>' +
-      C.twists.map((t) => `<p><b>${safe(t.name)}:</b> ${safe(t.summary)}</p>`).join("") + '</details>';
-    box.querySelectorAll("[data-twist]").forEach((x) => (x.onchange = () => toggleTwist(x.dataset.twist, x.checked)));
-    box.querySelectorAll("[data-trail]").forEach(
-      (b) =>
-        (b.onclick = (e) => {
-          e.preventDefault();
-          exportTrail(b.dataset.trail);
-        }),
-    );
-  }
-  function toggleTwist(id, on) {
-    if (!homes.length) {
-      loadRegion(region.id); // auto-load the region's fleet so scenarios work from a cold start
-    }
-    if (!active.length) twistBase = snapshotState();
-    active = on ? [...active, id] : active.filter((x) => x !== id);
-    const r = M.applyTwists(twistBase, C.twists, active);
-    homes = r.state.homes;
-    cfg = r.state.cfg;
-    writeInputs(r.state);
-    trail = r.trail;
-    if (!active.length) twistBase = null;
-    const t = C.twists.find((t) => t.id === id);
-    changed(`Twist ${on ? "ON" : "OFF"}: ${t.name}. ${r.trail.join("; ") || "Base case restored."}`);
-    renderTwists();
-  }
+  // ---------- decision export ----------
   function decisions() {
     let relief;
     try {
@@ -225,33 +175,21 @@
       handoff: handoffItems(),
     };
   }
-  function trailDoc(twist) {
+  function trailDoc() {
     return {
       schema: "powerup.decision-trail.v1",
       simulation: true,
       exportedAt: new Date().toISOString(),
       region: region && { id: region.id, name: region.name, provenance: region.provenance },
       scenario: scenario && { id: scenario.id, title: scenario.title, provenance: scenario.provenance },
-      twist,
-      activeTwists: active,
       demoMode: !!root.POWERUP_DEMO,
       battery: C.battery,
       inputs: { cfg, prices, shield: shieldValues(), criticalLoads: C.criticalLoads },
-      effectsApplied: trail,
       metrics: metrics(),
       decisions: decisions(),
       approved,
       events,
     };
-  }
-  function exportTrail(id) {
-    const t = C.twists.find((t) => t.id === id);
-    let before = null;
-    try {
-      before = twistBase && metrics(twistBase.homes, twistBase.cfg, P.prepare(twistBase.homes, twistBase.cfg));
-    } catch (e) {}
-    download(`PoweruP-trail-${id}.json`, { ...trailDoc(t), metricsBefore: before });
-    log(`Decision trail exported for twist “${t.name}”.`);
   }
 
   // ---------- operator handoff ----------
@@ -541,7 +479,7 @@
           rc = M.recharge(homes, energies, cfg, scenario.recharge || { lead: 8, headroom: cfg.headroom });
         log(`HAND OFF: staggered recharge proposed (${fmt(rc.surgeKw)} → ${fmt(rc.staggeredKw)} kW peak); ${handoffItems().length} items to the operator.`);
         figure(handoffFigure(rc));
-        $("handoffExport").onclick = () => download("PoweruP-trail-" + scenario.id + ".json", { ...trailDoc({ id: "demo", name: "Run demo replay" }), recharge: rc });
+        $("handoffExport").onclick = () => download("PoweruP-trail-" + scenario.id + ".json", { ...trailDoc(), recharge: rc });
       },
     },
   };
@@ -602,7 +540,7 @@
     demo.i = -1;
     $("captionBar").hidden = true;
     if (!finished) figure("");
-    else log("Demo finished. Switch region, toggle a twist, open Pilot & Funding, or export the decision trail.");
+    else log("Demo finished. Switch region, open Pilot & Funding, or export the decision trail.");
   }
 
   // ---------- Pilot & Funding tab ----------
@@ -644,13 +582,12 @@
   function mount() {
     document.querySelector(".topbar").after(el("div", { id: "headline", className: "headline", role: "status" }));
     const bar = el("div", { className: "controlbar" });
-    bar.append(el("div", { id: "regionPicker", className: "regionpicker" }), el("div", { id: "twistBar", className: "twistbar" }));
+    bar.append(el("div", { id: "regionPicker", className: "regionpicker" }));
     document.querySelector(".pagehead").after(bar);
     const actions = document.querySelector(".global-actions");
     const run = el("button", { id: "runDemo", className: "primary run" }, "▶ Run demo"),
-      toggle = el("button", { id: "demoToggle", title: "Bundled snapshots; no network calls" }, root.POWERUP_DEMO ? "Offline mode: ON" : "Offline demo mode"),
-      poster = el("a", { href: "poster.html", target: "_blank", className: "button-link", title: "Print-ready 24×36 poster" }, "Poster ↗");
-    actions.prepend(run, toggle, poster);
+      toggle = el("button", { id: "demoToggle", title: "Bundled snapshots; no network calls" }, root.POWERUP_DEMO ? "Offline mode: ON" : "Offline demo mode");
+    actions.prepend(run, toggle);
     // Pilot & Funding tab (rail button + view), driven by config/funding.json.
     const nav = document.querySelector(".rail-nav"),
       fbtn = el(
@@ -727,7 +664,6 @@
       scenario = region.scenarioData;
       C.criticalLoads = P.clone(region.criticalLoads);
       renderRegionPicker();
-      renderTwists();
       if (root.POWERUP_DEMO || q.has("region")) loadRegion(region.id);
       if (q.has("autoplay")) start();
       render();
@@ -737,5 +673,5 @@
       $("banner").textContent =
         "Demo config not loaded (" + e.message + "). Open through start-windows.bat / start-mac.sh, not by double-clicking the file.";
     });
-  root.PowerupDemo = { start, pause, stop, go, loadRegion, handoffItems, decisions, toggleTwist, metrics, state: demo, ready };
+  root.PowerupDemo = { start, pause, stop, go, loadRegion, handoffItems, decisions, metrics, state: demo, ready };
 })(globalThis);
