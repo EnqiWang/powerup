@@ -3,7 +3,6 @@
 'use strict';
 const key='powerup-theme', doc=document, html=doc.documentElement;
 let saved=null;try{saved=localStorage.getItem(key);}catch(_){}
-const media=root.matchMedia?root.matchMedia('(prefers-color-scheme: dark)'):null;
 function theme(name,persist=false){
  name=name==='dark'?'dark':'light';html.dataset.theme=name;
  if(persist){saved=name;try{localStorage.setItem(key,name);}catch(_){}}
@@ -12,8 +11,7 @@ function theme(name,persist=false){
  root.PowerupScene?.setTheme?.(name);
 }
 doc.querySelectorAll('[data-theme-choice]').forEach(b=>b.addEventListener('click',()=>theme(b.dataset.themeChoice,true)));
-theme(saved==='light'||saved==='dark'?saved:(media?.matches?'dark':'light'));
-media?.addEventListener?.('change',e=>{if(!saved)theme(e.matches?'dark':'light');});
+theme(saved==='light'||saved==='dark'?saved:'light');
 
 // Keep native details state when the existing planner redraws controls.
 const states=new Map();

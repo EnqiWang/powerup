@@ -40,6 +40,23 @@ test("demo routing has no network calls or remote URLs", () => {
   assert.doesNotMatch(body, /fetch|https?:\/\//);
 });
 
+test("map=0 keeps the map offline and retains the Census SVG fallback", () => {
+  const scene = fs.readFileSync(path.join(root, "scene.js"), "utf8"),
+    guard = scene.indexOf("get('map')==='0'"),
+    mapImport = scene.indexOf("import(MODULE)");
+  assert.ok(guard >= 0 && guard < mapImport, "offline guard runs before the MapLibre import");
+  assert.match(scene, /id=\"geoFallback\"/);
+  assert.match(scene, /Offline outline map of loaded ZIP areas/);
+});
+
+test("initial theme defaults to light while honoring a saved choice", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const ui = fs.readFileSync(path.join(root, "ui.js"), "utf8");
+  assert.match(html, /savedTheme === "dark" \|\| savedTheme === "light"[\s\S]*\? savedTheme[\s\S]*: "light"/);
+  assert.match(ui, /saved==='light'\|\|saved==='dark'\?saved:'light'/);
+  assert.doesNotMatch(ui, /prefers-color-scheme/);
+});
+
 test("headline metrics are finite and carry provenance badges", () => {
   const homes = consent(fleet(), 72),
     c = config.baseCase.cfg,

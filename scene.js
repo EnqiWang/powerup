@@ -6,7 +6,8 @@ let theme=(typeof document.documentElement!=='undefined'&&document.documentEleme
 function styleUrl(){return 'https://tiles.openfreemap.org/styles/'+(theme==='light'?'positron':'dark');}
 let handlersBound=false;
 const MODULE='https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.mjs';
-let host=null,options=null,map=null,lib=null,ready=false,loading=null,markers=[],geo=null,geoKey='',requested='',lastFit='',lastSelected=null;
+let host=null,options=null,map=null,lib=null,ready=false,loading=null,markers=[],geo=null,geoKey='',requested='',lastFit='',lastSelected=null,
+ fallbackReason=root.POWERUP_DEMO?'Demo mode: street basemap is optional.':null;
 function zipOf(h){if(h.measurement?.kind!=='zip-benchmark')return null;return [h.measurement.zip,h.measurement.location,h.name].map(String).join(' ').match(/\b\d{5}\b/)?.[0]||null;}
 function status(text){const el=document.getElementById('geoStatus');if(el)el.textContent=text;}
 function mount(el){
@@ -14,6 +15,7 @@ function mount(el){
  if(map){map.remove();map=null;ready=false;handlersBound=false;}
  host=el;
  el.innerHTML='<div id="geoCanvas" aria-label="Geographic map of Los Angeles with Census ZIP-area boundaries"></div><div class="geo-heading"><span>LOS ANGELES / GEOGRAPHIC VIEW</span><small>OSM basemap · Census ZCTA areas · modeled batteries</small></div><div class="geo-tools"><button id="geoFit" title="Show all loaded ZIP areas">Fit ZIPs</button><button id="geoTilt" title="Toggle map tilt">3D view</button><button id="geoRetry">Retry map</button></div><div id="geoStatus" class="geo-status" role="status">Loading real map…</div><div id="geoList" class="geo-list"></div>';
+ document.getElementById('geoCanvas').insertAdjacentHTML('afterend','<div id="geoFallback" class="geo-fallback" hidden></div>');
  document.getElementById('geoFit').onclick=()=>fit(true);
  document.getElementById('geoTilt').onclick=()=>{if(map){const tilt=map.getPitch()<=30;map.easeTo({pitch:tilt?48:0,zoom:tilt?Math.max(map.getZoom(),15.3):map.getZoom(),duration:900});}};
  document.getElementById('geoRetry').onclick=()=>{requested='';if(map){map.remove();map=null;ready=false;handlersBound=false;}loading=null;loadMap();loadGeography();};
@@ -41,8 +43,23 @@ function rows(){
  const connect=document.getElementById('geoConnect');if(connect)connect.onclick=()=>root.PowerupVisual?.view('data');
  const offline=document.getElementById('geoOffline');if(offline)offline.onclick=()=>root.PowerupVisual?.offline();
 }
+// Draw the bundled Census shapes without importing MapLibre or requesting map tiles.
+function fallback(){
+ const el=document.getElementById('geoFallback');if(!el)return;
+ if(ready||!fallbackReason){el.hidden=true;return;}
+ const byZip=new Map(options.homes.map(h=>[zipOf(h),h])),feats=(geo?.features||[]).filter(f=>byZip.has(f.properties.zip));
+ const note=`<div class="geo-fallback-note">OFFLINE MAP &middot; Census 2020 ZCTA outlines, no street basemap &middot; ${esc(fallbackReason)}</div>`;
+ el.hidden=false;
+ if(!feats.length){el.innerHTML=note;return;}
+ const rings=g=>g.type==='Polygon'?g.coordinates:g.coordinates.flat(),pts=feats.flatMap(f=>rings(f.geometry).flat());
+ const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),x0=Math.min(...xs),y1=Math.max(...ys),k=Math.cos((((Math.min(...ys)+y1)/2)*Math.PI)/180),w=(Math.max(...xs)-x0)*k,hgt=y1-Math.min(...ys),s=Math.min(560/w,360/hgt);
+ const px=p=>(20+(p[0]-x0)*k*s).toFixed(1)+','+(20+(y1-p[1])*s).toFixed(1);
+ const shapes=feats.map(f=>{const h=byZip.get(f.properties.zip),b=options.viewBudget(h),cls=!h.online?'unknown':b.targetMet?'ok':'short',d=rings(f.geometry).map(r=>'M'+r.map(px).join('L')+'Z').join(''),[lx,ly]=px([f.properties.lon,f.properties.lat]).split(',');return `<g class="zcta ${cls} ${h.id===options.selected?'active':''}" data-geohome="${h.id}"><path d="${d}"/><text x="${lx}" y="${ly}">${esc(f.properties.zip)}</text></g>`;}).join('');
+ el.innerHTML=`<svg viewBox="0 0 600 400" role="img" aria-label="Offline outline map of loaded ZIP areas">${shapes}</svg>${note}`;
+ el.querySelectorAll('[data-geohome]').forEach(g=>g.onclick=()=>select(options.homes.find(h=>h.id===+g.dataset.geohome),false));
+}
 function draw(){
- rows();if(!map||!ready)return;
+ rows();fallback();if(!map||!ready)return;
  markers.forEach(m=>m.remove());markers=[];
  const byZip=new Map(options.homes.map(h=>[zipOf(h),h]));
  const data={type:'FeatureCollection',features:(geo?.features||[]).filter(f=>byZip.has(f.properties.zip)).map(f=>{const h=byZip.get(f.properties.zip),b=options.viewBudget(h);return {...f,properties:{...f.properties,selected:h.id===options.selected,color:!h.online?'#8092a1':b.targetMet?(theme==='light'?'#087e65':'#49dfba'):(theme==='light'?'#945b0e':'#f4c178')}};})};
@@ -67,6 +84,12 @@ function draw(){
 }
 async function loadMap(){
  if(map||loading)return loading;
+ if(new URLSearchParams(root.location?.search).get('map')==='0'){
+  fallbackReason='Basemap disabled (map=0).';
+  status('Street basemap disabled for offline demo; Census outlines shown.');
+  fallback();
+  return;
+ }
  loading=(async()=>{
   let timer;
   try{
@@ -76,7 +99,7 @@ async function loadMap(){
    map.addControl(new lib.NavigationControl({visualizePitch:true}),'top-right');
    map.addControl(new lib.ScaleControl({maxWidth:90,unit:'imperial'}),'bottom-left');
    const restoreStyle=()=>{
-    ready=true;
+     ready=true;fallbackReason=null;fallback();
     try{
      const before=map.getStyle().layers.find(l=>l.type==='symbol'&&l.layout?.['text-field'])?.id;
      if(!map.getSource('powerup-osm-buildings'))map.addSource('powerup-osm-buildings',{type:'vector',url:'https://tiles.openfreemap.org/planet'});
@@ -85,9 +108,9 @@ async function loadMap(){
     status(geo?'Census areas located. Click a ZIP to inspect its real location.':'Real LA map loaded. Load ZIP usage to highlight Census areas.');draw();
    };
    map.on('load',restoreStyle);map.on('style.load',restoreStyle);
-   map.on('error',()=>status('Some map assets failed to load. Check internet access; no decorative map is substituted.'));
+   map.on('error',()=>{status('Some map assets failed to load. Showing the Census outline fallback.');if(!ready){fallbackReason='Map tiles failed to load.';fallback();}});
    if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>map?.resize()).observe(host);
-  }catch(e){status('Map unavailable: '+e.message+' ZIP usage remains available below; no invented locations shown.');}
+  }catch(e){fallbackReason='Map unavailable: '+e.message;fallback();status('Map unavailable: '+e.message+' Census outline fallback shown; no invented locations.');}
   finally{clearTimeout(timer);loading=null;}
  })();return loading;
 }
@@ -111,6 +134,6 @@ async function loadGeography(){
 }
 function render(el,next){options=next;mount(el);rows();loadMap();loadGeography();if(map)map.resize();}
 function resize(){if(map)map.resize();}
-function setTheme(name){const next=name==='light'?'light':'dark';if(next===theme)return;theme=next;if(map){ready=false;map.setStyle(styleUrl());}}
+function setTheme(name){const next=name==='light'?'light':'dark';if(next===theme)return;theme=next;if(map){ready=false;map.setStyle(styleUrl());}fallback();}
 root.PowerupScene={render,resize,zipOf,setTheme};
 })(globalThis);

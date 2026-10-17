@@ -13,9 +13,7 @@
       document.documentElement.dataset.theme =
         savedTheme === "dark" || savedTheme === "light"
           ? savedTheme
-          : window.matchMedia("(prefers-color-scheme: light)").matches
-            ? "dark"
-            : "light";
+          : "light";
     } catch (error) {
       document.documentElement.dataset.theme = "light";
     }
