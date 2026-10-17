@@ -57,6 +57,13 @@ test("initial theme defaults to light while honoring a saved choice", () => {
   assert.doesNotMatch(ui, /prefers-color-scheme/);
 });
 
+test("scenario controls auto-load the demo fleet and omit the assumed heading", () => {
+  const demo = fs.readFileSync(path.join(root, "demo.js"), "utf8");
+  assert.match(demo, /STRESS-TEST SCENARIOS/);
+  assert.doesNotMatch(demo, /TWISTS <i class="prov assumed">ASSUMED<\/i>/);
+  assert.match(demo, /if \(!homes\.length\) \{\s*setupFleet\(\);\s*\}/);
+});
+
 test("headline metrics are finite and carry provenance badges", () => {
   const homes = consent(fleet(), 72),
     c = config.baseCase.cfg,

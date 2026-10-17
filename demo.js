@@ -82,7 +82,7 @@
     if (!box || !C) return;
     const alerts = (root.weatherSnapshot || weatherSnapshot)?.alerts || [];
     box.innerHTML =
-      '<span class="twist-title">TWISTS <i class="prov assumed">ASSUMED</i></span>' +
+      '<span class="twist-title">STRESS-TEST SCENARIOS</span>' +
       C.twists
         .map((t) => {
           const on = active.includes(t.id),
@@ -101,9 +101,7 @@
   }
   function toggleTwist(id, on) {
     if (!homes.length) {
-      $("banner").textContent = "Load a fleet first (Run demo or Use saved SCE usage), then apply twists.";
-      renderTwists();
-      return;
+      setupFleet();
     }
     if (!active.length) twistBase = snapshotState();
     active = on ? [...active, id] : active.filter((x) => x !== id);
