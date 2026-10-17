@@ -602,6 +602,7 @@
     document.querySelector('[data-app-view="residents"]').after(sec);
     fbtn.onclick = () => {
       V.view("funding");
+      document.querySelector(".pagehead .eyebrow").textContent = "PILOT & FUNDING";
       renderFunding();
     };
     document.body.append(

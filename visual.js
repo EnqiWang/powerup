@@ -1,41 +1,17 @@
 /* Layout controls only. All planning and data provenance stay in their existing modules. */
 (function (root) {
   "use strict";
-  const pages = {
-    operations: {
-      eyebrow: "OVERVIEW",
-      title: "Stay ahead of the outage.",
-      description: "See which homes have enough backup power, and make a plan for those that need help.",
-    },
-    data: {
-      eyebrow: "DATA SOURCES",
-      title: "Choose your electricity data",
-      description: "Load saved examples, look up a ZIP code, or import household electricity use.",
-    },
-    residents: {
-      eyebrow: "RESIDENT ALERTS",
-      title: "Keep residents informed",
-      description: "Preview a preparation message and choose who should receive it. All delivery is simulated.",
-    },
-    funding: {
-      eyebrow: "PILOT & FUNDING",
-      title: "Plan a small-scale trial",
-      description: "Explore possible partners, trial stages, and what each stage would measure.",
-    },
-  };
   function view(name) {
-    if (!Object.hasOwn(pages, name)) name = "operations";
-    const page = pages[name];
-    document.body.dataset.view = name;
     document.querySelectorAll("[data-app-view]").forEach((el) => (el.hidden = el.dataset.appView !== name));
     document
       .querySelectorAll(".rail-button")
       .forEach((el) => el.classList.toggle("active", el.dataset.view === name));
     if (name === "operations" && root.PowerupScene) setTimeout(() => root.PowerupScene.resize(), 20);
-    document.querySelector(".pagehead .eyebrow").textContent = page.eyebrow;
-    document.querySelector(".pagehead h1").textContent = page.title;
-    document.querySelector(".pagehead p").textContent = page.description;
-    document.querySelector(".global-actions").hidden = name !== "operations";
+    document.querySelector(".pagehead .eyebrow").textContent = {
+      operations: "OPERATIONS / LOS ANGELES",
+      data: "EVIDENCE / LOS ANGELES",
+      residents: "OUTREACH / LOS ANGELES",
+    }[name];
   }
   function sync() {
     const known = homes.filter((h) => h.online),

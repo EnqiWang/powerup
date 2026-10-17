@@ -197,17 +197,17 @@ function render() {
     peak = plan ? Math.max(0, ...plan.trace.map((t) => t.total)) : null;
   let metrics = [
     [
-      "Homes ready",
+      "HOMES WITH ENOUGH BACKUP",
       ready + " / " + homes.length,
       `${homes.length - known.length} not reporting · ${known.length - ready} need more energy`,
     ],
     [
-      "Average backup time",
+      "AVERAGE BACKUP TIME",
       known.length ? fmt(coverage / known.length) + " h" : "Unknown",
       "Per reporting home, capped at the backup time needed",
     ],
     [
-      "Homes needing help",
+      "HOMES NEEDING HELP",
       String(homes.length - ready),
       "Not enough backup, or battery status unknown",
     ],
@@ -240,14 +240,14 @@ function render() {
     .join("");
   $("modeTitle").textContent = {
     shield: "Ease demand on the local grid.",
-    prepare: "Choose your backup time",
+    prepare: "Get ready before the outage.",
     outage: "Make stored energy last.",
     everyday: "Earn from spare energy.",
   }[mode];
   $("modeDescription").textContent = {
     shield:
       "See how home batteries and agreed energy savings can reduce demand on the local power line.",
-    prepare: "Enter how long the power might be out. We estimate whether each home's battery can cover that time.",
+    prepare: "Share the available charging power across homes and check who still needs more backup.",
     outage: "Choose how long backup must last. Save energy where residents agree, and flag homes that need help.",
     everyday:
       "Estimate earnings from selling spare battery energy while keeping backup power for each home.",
@@ -266,7 +266,7 @@ function render() {
       ? "This estimate sells only energy left after keeping household backup. It uses example prices and does not include all costs, power limits or utility rules."
       : outage
         ? `OUTAGE DEMO · ${fmt(outage.elapsed)} hours have passed. ${ready} homes have enough backup for the time left; ${known.length - ready} need more energy. Batteries that are not reporting are left out.`
-        : `${ready} of ${homes.length} homes have enough estimated backup for ${cfg.duration} hours. ${homes.length - ready ? "The others need more energy or a battery status check." : "All homes meet the target with these demo settings."} ${approved ? "Demo plan saved. No real batteries are controlled." : "This is an estimate, not a guarantee. Review the plan before saving it."}`;
+        : `Plan for ${cfg.duration} hours of backup, with ${cfg.lead} hours to charge and ${cfg.headroom} kW shared charging power. Home energy use and battery charge are demo settings. ${approved ? "Preparation approved for simulation." : plan ? "Preview updated automatically; ready for review." : "Valid input changes recalculate the preview automatically."}`;
   document
     .querySelectorAll("[data-mode]")
     .forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));

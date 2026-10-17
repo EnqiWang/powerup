@@ -47,84 +47,35 @@
     return box;
   }
   // Move existing controls rather than recreating them: their listeners and IDs stay intact.
-  const operations = doc.querySelector('[data-app-view="operations"]');
-  const settings = fold("session", "More tools", [
+  const settings = fold("session", "More options", [
     doc.querySelector(".controlbar"),
     ...["demoToggle", "guided", "jumpNotify", "reset", "export"].map((id) => doc.getElementById(id)),
   ]);
   settings.classList.add("session-options");
-  operations.after(settings);
+  doc.querySelector(".pagehead").after(settings);
   doc.getElementById("guided").textContent = "Step-by-step practice";
   const run = doc.getElementById("runDemo");
   run.textContent = "Watch walkthrough";
   run.classList.remove("primary");
   run.title = "Watch a 3-minute simulated outage replay";
-  const tools = settings.querySelector(".section-body");
-  tools.prepend(doc.querySelector(".journey"));
-  tools.appendChild(run);
-  doc.getElementById("guided").classList.remove("primary");
-  const navigationLabels = { operations: "Backup plan", data: "Electricity data", residents: "Messages", funding: "Project details" };
-  doc.querySelectorAll(".rail-button").forEach((button) => {
-    const label = navigationLabels[button.dataset.view];
-    button.querySelector("span").textContent = label;
-    button.title = label;
-    button.setAttribute("aria-label", label);
-  });
-  // Keep the first screen focused on the backup choice and its result.
-  const content = doc.querySelector(".workspace .content");
-  const inspection = fold("inspection", "See individual homes & charging details", [
-    ...content.querySelectorAll(":scope > .panel"),
-    doc.querySelector(".workspace .detail"),
-  ]);
-  inspection.classList.add("home-inspection");
-  operations.appendChild(inspection);
-  inspection.addEventListener("toggle", () => {
-    if (inspection.open) root.PowerupScene?.resize?.();
-  });
-  const resultTitle = doc.createElement("h2");
-  resultTitle.textContent = "Your estimated backup";
-  resultTitle.className = "result-title";
-  content.prepend(resultTitle);
+  const operations = doc.querySelector('[data-app-view="operations"]');
   const estimates = fold("estimates", "More estimates & assumptions", [doc.getElementById("headline")]);
   estimates.classList.add("extra-estimates");
-  tools.append(estimates, operations.querySelector(".advanced-disclosure"));
+  operations.insertBefore(estimates, operations.querySelector(".advanced-disclosure"));
   const stress = doc.getElementById("stress");
   doc.querySelector(".charging-settings").appendChild(stress);
-  doc.querySelector(".charging-settings").prepend(doc.querySelector(".charge-timing"));
-  doc.querySelector(".charging-settings > summary").textContent = "Plan settings (optional)";
   const approve = doc.getElementById("approve");
   doc.querySelector(".charging-settings").before(approve);
-  const tryOutage = doc.createElement("button");
-  tryOutage.id = "tryOutage";
-  tryOutage.className = "primary wide";
-  tryOutage.textContent = "Try an outage simulation";
-  tryOutage.hidden = true;
-  approve.after(tryOutage);
-  tryOutage.onclick = () => {
-    doc.querySelector('[data-mode="outage"]').click();
-    if (!outage) doc.getElementById("startOutage").click();
-  };
   // The empty workspace stays out of the way until data or examples have been loaded.
   doc.body.classList.toggle("has-homes", homes.length > 0);
   doc.body.dataset.mode = mode;
   const updateHint = () => {
-    const step = !homes.length ? 1 : approved || doc.getElementById("review").open ? 3 : 2;
-    doc.querySelectorAll("[data-plan-step]").forEach((item) => {
-      if (+item.dataset.planStep === step) item.setAttribute("aria-current", "step");
-      else item.removeAttribute("aria-current");
-    });
-    approve.hidden = approved || mode !== "prepare";
-    tryOutage.hidden = !approved || mode !== "prepare";
-    tryOutage.textContent = outage ? "Continue outage simulation" : "Try an outage simulation";
-    resultTitle.textContent = mode === "prepare" || mode === "outage" ? "Your estimated backup" : "Your estimate";
     doc.getElementById("planningHint").textContent = !homes.length
       ? ""
       : mode === "prepare"
         ? approved
-          ? outage
-            ? "An outage simulation is running. Continue it, or change the backup hours to start a new plan."
-            : "Your demo plan is saved. You can try an outage simulation, or change the hours to update your plan."
-          : "Choose how long you need backup. Check the estimate, then select Review plan."
+          ? "Plan approved for this simulation. Choose During an outage to see how the backup lasts."
+          : "Choose your backup hours in Your plan, then select Review plan. Estimates update automatically."
         : mode === "outage"
           ? "Choose Start outage simulation, then advance the clock to see how long backup lasts."
           : mode === "shield"
@@ -132,7 +83,6 @@
             : "Set example prices and the backup hours to keep, then compare the estimated earnings.";
   };
   new MutationObserver(updateHint).observe(doc.getElementById("banner"), { childList: true });
-  new MutationObserver(updateHint).observe(doc.getElementById("review"), { attributes: true, attributeFilter: ["open"] });
   updateHint();
   function decorate() {
     const target = doc.getElementById("detail"),

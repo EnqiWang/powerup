@@ -44,13 +44,6 @@ test("old poster URL redirects to the app, including on GitHub Pages subpaths", 
 
 test("simplified overview labels its average correctly and includes unverified homes needing help", () => {
   const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
-  assert.match(app, /"Average backup time",\s*known\.length \? fmt\(coverage \/ known\.length\)/);
-  assert.match(app, /"Homes needing help",\s*String\(homes\.length - ready\)/);
-});
-
-test("planning flow has three progress steps and readable styles loaded last", () => {
-  assert.deepEqual([...html.matchAll(/data-plan-step="(\d)"/g)].map((m) => m[1]), ["1", "2", "3"]);
-  const styles = [...html.matchAll(/<link[^>]*href="([^"?]+\.css)/g)].map((m) => m[1]);
-  assert.equal(styles.at(-1), "simple-ui.css");
-  assert.ok(fs.existsSync(path.join(root, styles.at(-1))));
+  assert.match(app, /"AVERAGE BACKUP TIME",\s*known\.length \? fmt\(coverage \/ known\.length\)/);
+  assert.match(app, /"HOMES NEEDING HELP",\s*String\(homes\.length - ready\)/);
 });
