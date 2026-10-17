@@ -1,3 +1,10 @@
+GEOGRAPHIC MAP UPDATE
+Connect ZIP data -> Load SCE API -> click a ZIP outline or marker -> inspect
+its real LA-area location and historical monthly usage. Choose 3D view for
+OSM mapped buildings when height data is available. Map markers are Census
+representative points, not individual battery locations. The previous
+decorative cityscape has been replaced by an online geographic map.
+
 PoweruP — prepare earlier, preserve essential service
 
 One person: a home-battery fleet dispatcher.

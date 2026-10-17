@@ -1,0 +1,19 @@
+/* Lightweight DOM smoke test. This is not a real-browser rendering test. */
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync(__dirname+'/index.html','utf8'),nodes={},dynamic={};
+function makeNode(key){return nodes[key]??=( {value:'',checked:false,disabled:false,hidden:false,dataset:{},classList:{toggle(){}},open:false,reportValidity(){return true},showModal(){this.open=true},close(){this.open=false},click(){return this.onclick?.()},appendChild(child){this.innerHTML+=child.innerHTML||''},closest(){return this},replaceChildren(){this.innerHTML=''},querySelectorAll(selector){return query(selector)},querySelector(){return null},set innerHTML(s){dynamic[key]=s},get innerHTML(){return dynamic[key]||''},textContent:''});}
+function register(markup){for(const m of markup.matchAll(/<([a-z][a-z0-9]*)\b([^>]+)>/g)){const attrs={};for(const a of m[2].matchAll(/([a-zA-Z-]+)="([^"]*)"/g))attrs[a[1]]=a[2];if(attrs.id){const n=makeNode(attrs.id);if(attrs.value!==undefined)n.value=attrs.value;}for(const attr of Object.keys(attrs).filter(a=>a.startsWith('data-'))){const key=attr+':'+attrs[attr],n=makeNode(key);n.dataset[attr.slice(5).replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]=attrs[attr];}}}
+register(html);
+function query(selector){const attr=selector.match(/^\[(data-[\w-]+)\]$/)?.[1];if(!attr)return[];register(Object.values(dynamic).join(''));return Object.entries(nodes).filter(([key])=>key.startsWith(attr+':')).map(([,n])=>n);}
+const document={head:{appendChild(){}},getElementById(id){if(['profileCardStyles','sceneConnect','sceneOffline','geoConnect','geoOffline'].includes(id)&&!nodes[id])return null;register(Object.values(dynamic).join(''));if(!nodes[id])throw Error('Missing DOM element '+id);return nodes[id]},querySelector:()=>makeNode('pageEyebrow'),querySelectorAll:selector=>selector===' .rail-button'.trim()?Object.entries(nodes).filter(([k])=>k.startsWith('data-view:')).map(([,n])=>n):query(selector),createElement:()=>makeNode('created')};
+const context={document,console,Date,setTimeout,clearTimeout,location:{protocol:'http:',reload(){}},AbortSignal,Blob,URL,fetch:async()=>{throw Error('No fixture response configured')}};vm.createContext(context);vm.runInContext(fs.readFileSync(__dirname+'/engine.js','utf8'),context);vm.runInContext(fs.readFileSync(__dirname+'/advanced.js','utf8'),context);vm.runInContext(fs.readFileSync(__dirname+'/app.js','utf8'),context);vm.runInContext(fs.readFileSync(__dirname+'/experience.js','utf8'),context);
+vm.runInContext(fs.readFileSync(__dirname+'/sce.js','utf8'),context);
+const run=s=>vm.runInContext(s,context);
+
+for(const script of ['scene.js','notifications.js','visual.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+script,'utf8'),context);
+run('render()');assert(nodes.map.innerHTML.includes('geoCanvas'));
+run('PowerupVisual.view("data")');assert(!nodes['data-app-view:data'].hidden);
+nodes.offlineData.onclick();assert.equal(run('homes.length'),6);assert(nodes.geoList.innerHTML.includes('ZIP 90002'));assert.equal(run('homes[0].measurement.monthlyKwh'),376.446082949309);assert(nodes.dataBadge.textContent.includes('SAVED SCE'));assert(!nodes['data-app-view:operations'].hidden);
+nodes.plan.onclick();assert(run('plan!==null'));nodes.guided.onclick();assert(!nodes.tour.hidden);for(let i=0;i<5;i++)nodes.tourNext.onclick();assert.equal(run('mode'),'everyday');
+run('PowerupVisual.view("residents")');assert(!nodes['data-app-view:residents'].hidden);nodes.seedContacts.onclick();nodes.notifyLevel.value='prepare';nodes.notifyEvidence.value='scenario';nodes.reviewNotify.onclick();nodes.confirmNotify.onclick();nodes.nextNotify.onclick();assert(nodes.notifyCounts.textContent.includes('4 simulated messages'));
+console.log('Redesigned UI flow passed: data routing, real saved SCE records, scene nodes, plan, guide and resident alerts.');

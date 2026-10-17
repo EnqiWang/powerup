@@ -16,9 +16,13 @@ class ServerTests(unittest.TestCase):
         httpd=ThreadingHTTPServer(('127.0.0.1',0),partial(server.Handler,directory=str(server.ROOT)))
         threading.Thread(target=httpd.serve_forever,daemon=True).start();base=f'http://127.0.0.1:{httpd.server_port}'
         try:
-            for path in ['/','/app.js','/engine.js','/advanced.js','/experience.js','/sce.js','/notifications.js','/style.css']:
+            for path in ['/','/app.js','/engine.js','/advanced.js','/experience.js','/sce.js','/notifications.js','/scene.js','/visual.js','/style.css']:
                 with urlopen(base+path) as response:self.assertEqual(response.status,200)
             with self.assertRaises(HTTPError):urlopen(base+'/server.py')
+            with self.assertRaises(HTTPError) as error:urlopen(base+'/api/geography?zips=bad')
+            self.assertEqual(error.exception.code,400)
+            with patch.object(server.geography,'fetch',return_value={'type':'FeatureCollection','features':[]}):
+                self.assertEqual(json.load(urlopen(base+'/api/geography?zips=90002'))['type'],'FeatureCollection')
             with self.assertRaises(HTTPError) as error:urlopen(base+'/api/sce?zip=invalid')
             self.assertEqual(error.exception.code,400)
             with patch.object(server,'fetch_sce',return_value={'zip':'90002','records':[],'latest':None}):

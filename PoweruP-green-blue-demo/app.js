@@ -26,7 +26,7 @@ function renderEmpty(){
  $('outageControls').hidden=mode!=='outage';$('shieldControls').hidden=mode!=='shield';$('priceControls').hidden=mode!=='everyday';
  document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
  $('ladder').innerHTML='<div><span class="eyebrow">START WITH EVIDENCE</span><p>Awaiting ZIP or household demand data.</p></div>';
- if(typeof renderReadiness==='function')renderReadiness();
+ if(typeof renderReadiness==='function')renderReadiness();if(typeof PowerupScene!=='undefined')PowerupScene.render($('map'),{homes:[],selected:null,viewBudget,projectedEnergy,select:()=>{}});
 }
 function render(){
  if(!homes.length){renderEmpty();return;}
@@ -41,9 +41,10 @@ function render(){
  $('modeDescription').textContent={shield:'Fleet dispatcher: reduce a modeled neighborhood constraint without touching external critical loads.',prepare:'Fleet dispatcher: allocate limited charging headroom and verify household readiness.',outage:'Fleet dispatcher: set a duration target, apply accepted reductions, and escalate shortfalls.',everyday:'Second customer: utility demand-response dispatcher evaluating peak relief on an ordinary Tuesday.'}[mode];
  $('shieldControls').hidden=mode!=='shield';$('outageControls').hidden=mode!=='outage';$('priceControls').hidden=mode!=='everyday';$('approve').disabled=!plan||approved||!!outage;$('plan').disabled=!!outage;$('projected').disabled=!!outage;$('startOutage').disabled=!!outage;$('advance').disabled=!outage||outage.elapsed>=cfg.duration;$('finish').disabled=$('advance').disabled;
  $('banner').textContent=mode==='everyday'?'Ordinary Tuesday scenario: estimated export uses only stored energy above the modeled household reserve. Prices and market access are assumptions. Household service during the event and inverter power constraints require separate validation.':outage?`OUTAGE SIMULATOR · ${fmt(outage.elapsed)} hours elapsed. ${ready} known profiles can cover the remaining target; ${known.length-ready} need follow-up. Unknown devices remain unverified to the dispatcher. Local simulator state is shown separately.`:`${cfg.duration}-hour target, ${cfg.lead}-hour preparation window, ${cfg.headroom} kW charging headroom. Resident load shares and battery state are scenario inputs. ${approved?'Preparation approved for simulation.':plan?'Projected plan ready for review.':'Generate a plan after recording resident flexibility.'}`;
- document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));renderMap();renderDetail();renderChart();if(typeof renderAdvanced==='function')renderAdvanced();
+ document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));renderMap();renderDetail();renderChart();if(typeof renderAdvanced==='function')renderAdvanced();if(typeof PowerupVisual!=='undefined')PowerupVisual.sync();
 }
 function renderMap(){
+ if(typeof PowerupScene!=='undefined'){PowerupScene.render($('map'),{homes,selected,viewBudget,projectedEnergy,select:id=>{selected=id;renderMap();renderDetail();}});return;}
  if(!document.getElementById('profileCardStyles')){
   const style=document.createElement('style');style.id='profileCardStyles';
   style.textContent='#map{padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}#map .profile-card{display:flex;flex-direction:column;gap:10px;text-align:left;background:#fff;border:1px solid #dce3d5;border-radius:12px;padding:16px;min-width:0;color:#25372a}#map .profile-card[aria-pressed="true"]{border:2px solid #2672c7;padding:15px;background:#f3f8ff}#map .profile-card:focus-visible{outline:3px solid #2672c7;outline-offset:3px}#map .profile-runtime{font-size:28px;font-weight:700}#map .profile-status{font-size:12px;font-weight:700}#map .profile-note{font-size:12px;line-height:1.5;color:#596451}';

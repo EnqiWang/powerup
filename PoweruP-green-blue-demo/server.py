@@ -1,4 +1,5 @@
 """PoweruP local server. Python 3.10+, standard library only."""
+import geography
 import argparse
 import calendar
 import json
@@ -198,7 +199,10 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         if url.path == '/api/version':
-            self.send_json(200, {'version': 'PoweruP green-blue SCE API 5', 'householdLoader': True, 'sceApi': True, 'notificationDemo': True})
+            self.send_json(200, {'version': 'PoweruP Geographic Fleet Command 7', 'householdLoader': True, 'sceApi': True, 'notificationDemo': True})
+            return
+        if url.path == '/api/geography':
+            self.send_json(*geography.get(parse_qs(url.query).get('zips', [''])[0], https_context()))
             return
         if url.path == '/api/sce':
             self.send_json(*get_sce(parse_qs(url.query).get('zip', [''])[0]))
@@ -228,7 +232,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_json(*get_weather(lat, lon))
             return
         # Serve only the app's public entrypoint and scheduler.
-        if url.path not in ('/', '/index.html', '/engine.js', '/app.js', '/advanced.js', '/experience.js', '/sce.js', '/notifications.js', '/style.css'):
+        if url.path not in ('/', '/index.html', '/engine.js', '/app.js', '/advanced.js', '/experience.js', '/sce.js', '/notifications.js', '/scene.js', '/visual.js', '/style.css'):
             self.send_error(404)
             return
         super().do_GET()
