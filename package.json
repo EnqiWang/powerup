@@ -4,6 +4,11 @@
   "description": "PoweruP fleet-resilience demo. Static site; no runtime dependencies.",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "start": "python -m http.server 8004 --bind 127.0.0.1"
+    "start": "python -m http.server 8004 --bind 127.0.0.1",
+    "retell": "node retell-server.js",
+    "retell:dev": "node retell-dev.js"
+  },
+  "engines": {
+    "node": ">=20.12"
   }
 }
