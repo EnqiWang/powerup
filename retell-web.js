@@ -1,6 +1,6 @@
 /* PoweruP × Retell AI — "Talk to AI" browser voice call. Frontend on GitHub Pages; backend on Render
    (retell-server.js hosted mode, see DEPLOY-RENDER.md), whose URL is in planner.html's
-   <meta name="powerup-retell-backend">. Without a reachable backend the panel says so and the mock still works.
+   <meta name="powerup-retell-backend">. Without a reachable backend the panel says so (the mock stays available in developer mode).
    Each call: microphone check → Cloudflare Turnstile (invisible) → the backend checks the token and its limits and
    creates the web call → the browser joins with a short-lived access token for that call. The Retell API key never
    reaches the browser. Browser microphone calls only, never phone calls. Sessions are anonymous bearer tokens kept
@@ -152,13 +152,14 @@
 
   // ---------- UI ----------
   function draw() {
-    const mins = state.config ? Math.round(state.config.maxSeconds / 60) : 2;
+    const mins = state.config ? Math.round(state.config.maxSeconds / 60) : 2,
+      mockNote = R.mockMode ? " The mock buttons above still work." : "";
     const notes = {
-      unconfigured: "The voice backend is not connected on this copy of the site. The mock buttons above still work.",
+      unconfigured: "The voice backend is not connected on this copy of the site." + mockNote,
       checking: "Checking the voice service…",
       waking: "Waking up the voice service (free hosting can take up to a minute)…",
-      unreachable: "The voice service is not reachable right now. The mock buttons above still work.",
-      off: `Voice calls are unavailable: ${safe(state.config?.reason || "switched off")}. The mock buttons above still work.`,
+      unreachable: "The voice service is not reachable right now." + mockNote,
+      off: `Voice calls are unavailable: ${safe(state.config?.reason || "switched off")}.` + mockNote,
     };
     let body;
     if (notes[state.phase])

@@ -52,10 +52,12 @@ test("planner's configured backend is a bare https origin the frontend accepts, 
 });
 
 // Runs the real browser parts of retell-mock.js (and optionally retell-web.js) against a tiny fake DOM.
-function page({ web = false, backend = "" } = {}) {
+function page({ web = false, backend = "", hostname = "enqiwang.github.io", search = "" } = {}) {
   const els = {},
-    fetched = [];
-  const el = () => ({ after() {}, querySelectorAll: () => [], dataset: {}, innerHTML: "", append() {}, focus() {}, scrollIntoView() {} });
+    created = [],
+    fetched = [],
+    downloads = [];
+  const el = () => ({ after() {}, querySelectorAll: () => [], dataset: {}, innerHTML: "", append() {}, focus() {}, scrollIntoView() {}, click() {} });
   const ctx = {
     homes: fleet(),
     cfg: { duration: 24, lead: 6, headroom: 8, floor: 0.2 },
@@ -68,7 +70,13 @@ function page({ web = false, backend = "" } = {}) {
     Powerup: P,
     URLSearchParams,
     AbortSignal,
-    location: { search: "", hostname: "enqiwang.github.io", hash: "" },
+    Blob: class {
+      constructor(parts) {
+        downloads.push(JSON.parse(parts.join("")));
+      }
+    },
+    URL: { createObjectURL: () => "blob:test", revokeObjectURL() {} },
+    location: { search, hostname, hash: "" },
     sessionStorage: { getItem: () => null, setItem() {} },
     setInterval: () => 0,
     setTimeout: () => 0,
@@ -77,7 +85,7 @@ function page({ web = false, backend = "" } = {}) {
     navigator: {},
     fetch: (url) => (fetched.push(url), new Promise(() => {})),
     document: {
-      createElement: el,
+      createElement: () => (created.push(el()), created.at(-1)),
       getElementById: (id) => (els[id] ||= el()),
       querySelector: (q) => (q.startsWith("meta") ? { content: backend } : null),
       head: el(),
@@ -88,7 +96,9 @@ function page({ web = false, backend = "" } = {}) {
   vm.createContext(ctx);
   vm.runInContext(read("retell-mock.js"), ctx);
   if (web) vm.runInContext(read("retell-web.js"), ctx);
-  return { ctx, els, fetched, R: ctx.PowerupRetell };
+  const panel = () => created.find((e) => e.id === "retellMock").innerHTML;
+  const exported = () => (els.retellExport.onclick(), downloads.at(-1).records);
+  return { ctx, els, fetched, panel, exported, R: ctx.PowerupRetell };
 }
 
 test("without a backend URL the panel says so, makes no request, and the mock still works", () => {
@@ -148,4 +158,65 @@ test("the Retell panel tells real web calls apart from mock results", () => {
   PR.expect("web-9", ctx.homes[0]);
   assert.equal(PR.receive(R.sample("web-9", 1, "agree", 2), "WEB CALL").source, "WEB CALL");
   assert.equal(PR.receive(R.sample("mock-9", 1, "agree", 2)).source, "MOCK");
+});
+
+test("public page: no mock buttons and no MOCK results, while real web call results of every status stay listed", () => {
+  for (const search of ["", "?demo=1&map=0", "?retellMock=1", "?demo=1&retellMock=1"]) {
+    const { R: PR, ctx, panel } = page({ search });
+    assert.equal(PR.mockMode, false, search);
+    assert.doesNotMatch(panel(), /retellSampleAgree|retellSampleDecline|Mock call|MOCK/, search);
+    assert.match(panel(), /No call results yet/);
+    // A mock received anyway (e.g. from the console) is kept but not listed.
+    const m = PR.receive(R.sample("mock-hidden", 1, "agree", 4));
+    assert.equal(m.status, "pending");
+    assert.doesNotMatch(panel(), /mock-hidden|MOCK/);
+    assert.match(panel(), /No call results yet/);
+    assert.doesNotMatch(panel(), /retellExport/);
+    assert.match(PR.receive(R.sample("mock-hidden", 1, "agree", 4)).reason, /Duplicate/, "the hidden record is still stored");
+    // Real results: pending, declined (pending decline), rejected.
+    PR.expect("web-a", ctx.homes[0]);
+    PR.expect("web-d", ctx.homes[1]);
+    PR.receive(R.sample("web-a", 1, "agree", 3), "WEB CALL");
+    PR.receive(R.sample("web-d", 2, "decline", 0), "WEB CALL");
+    PR.receive(R.sample("web-x", 2, "agree", 3), "WEB CALL");
+    const html = panel();
+    for (const id of ["web-a", "web-d", "web-x"]) assert.match(html, new RegExp("call " + id));
+    assert.match(html, /WEB CALL<\/span><span class="retell-status">pending/);
+    assert.match(html, /WEB CALL<\/span><span class="retell-status">rejected/);
+    assert.match(html, /Declines any EV charging reduction/);
+    assert.match(html, /data-retellconfirm=.*data-retelldiscard=/s, "Confirm/Discard unchanged");
+    assert.match(html, /<button id="retellExport" class="wide">Export call records<\/button>/);
+  }
+});
+
+test("developer mode (?retellMock=1 on localhost only) shows the mock buttons and MOCK results", () => {
+  for (const hostname of ["localhost", "127.0.0.1"]) {
+    const { R: PR, panel } = page({ hostname, search: "?retellMock=1" });
+    assert.equal(PR.mockMode, true);
+    assert.match(panel(), /<button id="retellSampleAgree">Mock call: agrees \(4 h\)<\/button><button id="retellSampleDecline">Mock call: declines<\/button>/);
+    PR.receive(R.sample("mock-shown", 1, "agree", 4));
+    assert.match(panel(), /retell-tag mock">MOCK<\/span>[\s\S]*call mock-shown/);
+  }
+  assert.equal(page({ hostname: "localhost", search: "?demo=1" }).R.mockMode, false, "?demo=1 does not enable mocks");
+  assert.equal(page({ hostname: "localhost", search: "?retellMock=0" }).R.mockMode, false);
+});
+
+test("voice status notes mention the mock buttons only in developer mode", () => {
+  assert.doesNotMatch(page({ web: true }).els.retellLiveBody.innerHTML, /mock/i);
+  assert.match(page({ web: true, hostname: "localhost", search: "?retellMock=1" }).els.retellLiveBody.innerHTML, /mock buttons above still work/);
+});
+
+test("Export call records: the public page exports only visible records; developer mode still exports mocks", () => {
+  const pub = page();
+  pub.R.receive(R.sample("mock-old", 1, "agree", 4));
+  pub.R.expect("web-e", pub.ctx.homes[0]);
+  pub.R.receive(R.sample("web-e", 1, "agree", 3), "WEB CALL");
+  pub.R.receive(R.sample("web-foreign", 2, "agree", 3), "WEB CALL");
+  assert.deepEqual(pub.exported().map((r) => [r.source, r.callId]), [["WEB CALL", "web-e"], ["WEB CALL", "web-foreign"]]);
+  assert.match(pub.R.receive(R.sample("mock-old", 1, "agree", 4)).reason, /Duplicate/, "the mock is still stored internally");
+  const dev = page({ hostname: "localhost", search: "?retellMock=1" });
+  dev.R.receive(R.sample("mock-dev", 1, "agree", 4));
+  dev.R.expect("web-dev", dev.ctx.homes[1]);
+  dev.R.receive(R.sample("web-dev", 2, "decline", 0), "WEB CALL");
+  assert.deepEqual(dev.exported().map((r) => r.source), ["MOCK", "WEB CALL"]);
 });

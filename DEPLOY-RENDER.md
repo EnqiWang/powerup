@@ -44,7 +44,7 @@ Theoretical maximum with the defaults: **20 calls × 2 min = 40 call-minutes per
   need a valid Turnstile token per call and hit every limit, but paid captcha-solving can defeat Turnstile, and
   per-session/per-IP limits can be spread across many sessions and IPs. The global daily cap and concurrency cap
   bound the cost per instance lifetime; if someone exhausts them, legitimate visitors are refused until the next
-  UTC day (use the mock buttons, or raise the cap). Watch the Render logs during judging.
+  UTC day (raise the cap if needed). Watch the Render logs during judging.
 - **`ALLOWED_ORIGINS=https://enqiwang.github.io`** also admits other GitHub Pages projects under that account
   (same origin). Turnstile hostname checks have the same granularity.
 - A visitor can extract their own call's access token and join that one call from another client; it is still a
@@ -114,7 +114,7 @@ service in Render. Fastest provider-side stop: disable the agent or rotate the A
 ## Step 4 — Frontend (this PR, merged by the team)
 
 1. In `planner.html`, set `<meta name="powerup-retell-backend" content="https://<your-service>.onrender.com" />`
-   (HTTPS origin, no path). Empty means "voice backend not connected" and only the mock is offered.
+   (HTTPS origin, no path). Empty means "voice backend not connected".
 2. Discoverability: **Talk to AI 🎙** in the planner's action bar, and a **Talk to AI 🎙** link on the replay home
    page (`index.html`) that opens `planner.html?demo=1&map=0#talk-to-ai`.
 3. The browser SDK is `retell-client-js-sdk@3.0.2` from jsDelivr, using the **legacy `RetellWebClient`** with a
@@ -132,8 +132,8 @@ the team site stays untouched. Pages origins are lowercase (`DAI0915` → `dai09
    Same keys, so nothing changes in Render or the repository.
 3. **Fork → Settings → Pages:** deploy from branch `feature/retell-talk-to-ai`, folder `/ (root)`.
 4. **Kill-switch check (no credits):** open `https://dai0915.github.io/powerup/planner.html?demo=1&map=0#talk-to-ai`.
-   The panel should say live calls are switched off, with no CORS error in the console, and the mock buttons
-   should work. From a terminal: `curl -i -H "Origin: https://dai0915.github.io" https://<service>.onrender.com/retell/config`
+   The panel should say live calls are switched off, with no CORS error in the console, and no mock buttons
+   or MOCK results should appear. From a terminal: `curl -i -H "Origin: https://dai0915.github.io" https://<service>.onrender.com/retell/config`
    must return 200, `access-control-allow-origin: https://dai0915.github.io` and `"live":false`.
 5. **Live voice test (spends credits):** set `RETELL_ENABLED=true`, make one short call, confirm the pending
    result appears and Confirm/Discard work, then set it back to `false`.
@@ -149,7 +149,12 @@ npm run retell:dev                         # stubbed backend on :8016, Cloudflar
 # open the URL it prints (planner with ?retellBackend=...&retellSdk=tests/fixtures/fake-retell-sdk.js)
 ```
 
-`?retellBackend=` and `?retellSdk=` work only on `localhost`/`127.0.0.1`. To run hosted mode yourself against
+**Mock calls (developer/test mode):** add `?retellMock=1` on `localhost`/`127.0.0.1`, e.g.
+`http://127.0.0.1:8004/planner.html?demo=1&map=0&retellMock=1#talk-to-ai`. This shows the **Mock call: agrees / declines**
+buttons and MOCK results. The public site never shows them (`?demo=1` does not enable them); MOCK records received
+there, e.g. via `PowerupRetell.receive()` in the console, are kept in memory but neither listed nor exported.
+
+`?retellBackend=`, `?retellSdk=` and `?retellMock=` work only on `localhost`/`127.0.0.1`. To run hosted mode yourself against
 real Retell, set the variables from `.env.example` plus `PORT`, and
 `ALLOWED_ORIGINS=http://127.0.0.1:8004`. Turnstile test keys require `TURNSTILE_ALLOW_TEST_KEYS=true` and are refused
 otherwise. The original local mode (`npm run retell`, two ports, `?retell=live`) is unchanged.

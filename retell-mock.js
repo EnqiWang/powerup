@@ -5,6 +5,8 @@
    Web calls (retell-web.js): each result is pinned to the home selected when its call started in this tab.
    A confirmed resident response overrides scenario assumptions. It is bound to the exact home object it was
    received for; fleet replacement or later edits are detected and logged, never silently carried or lost.
+   Mock buttons and MOCK results appear only in developer mode (?retellMock=1 on localhost); the public page shows
+   real results only. Records are never dropped, only left out of the list and the public export.
    Remove: delete this file, retell-server.js, retell-send-sample.js, tests/retell-*.test.js and its <script> tag. */
 (function (root) {
   "use strict";
@@ -120,8 +122,13 @@ if (typeof document !== "undefined") {
     homeOf = new WeakMap(), // record → the exact home object it was received for (kept out of the export)
     expected = new Map(); // call_id → home object selected when this tab started that web call
   let mockCount = 0;
+  const params = new URLSearchParams(location.search),
+    // Developer/test mode only. ?demo=1 does not enable it.
+    mockMode = ["localhost", "127.0.0.1"].includes(location.hostname) && params.get("retellMock") === "1",
+    shown = (r) => mockMode || r.source !== "MOCK";
+  R.mockMode = mockMode;
   // Opt-in (?retell=live): poll the localhost-only feed of retell-server.js. Same origin; nothing external.
-  const live = new URLSearchParams(location.search).get("retell") === "live" ? { status: "connecting", after: 0 } : null;
+  const live = params.get("retell") === "live" ? { status: "connecting", after: 0 } : null;
   const box = document.createElement("div");
   box.id = "retellMock";
   box.className = "load retell-panel";
@@ -210,23 +217,29 @@ if (typeof document !== "undefined") {
   function retellRender() {
     box.innerHTML =
       `<div class="retell-head"><h3>Resident phone responses</h3><span class="retell-tag">Retell AI</span></div>` +
-      `<p class="retell-text">Each result is labelled by source: <b>WEB CALL</b> is a real browser voice call with the Retell AI agent (Talk to AI, below); <b>MOCK</b> is simulated by the buttons here, with no call placed and nothing sent.</p>` +
-      `<p class="retell-text">Either way it covers reducing <b>EV charging during the outage window</b>, not pre-outage EV top-up, and the simulation changes only after you confirm.</p>` +
+      (mockMode
+        ? `<p class="retell-text">Each result is labelled by source: <b>WEB CALL</b> is a real browser voice call with the Retell AI agent (Talk to AI, below); <b>MOCK</b> is simulated by the buttons here, with no call placed and nothing sent.</p>`
+        : `<p class="retell-text">Results labelled <b>WEB CALL</b> come from a real browser voice call with the Retell AI agent (Talk to AI, below).</p>`) +
+      `<p class="retell-text">${mockMode ? "Either way it covers" : "Each covers"} reducing <b>EV charging during the outage window</b>, not pre-outage EV top-up, and the simulation changes only after you confirm.</p>` +
       (live ? `<p class="retell-text">Live test feed (local retell-server.js): <b>${safe(live.status)}</b>. Verified Retell webhooks still need your Confirm.</p>` : "") +
-      `<div class="retell-sub"><span class="retell-tag mock">MOCK · Retell AI</span><p class="retell-text">Simulate a post-call result. No call is placed.</p>` +
-      `<div class="retell-actions"><button id="retellSampleAgree">Mock call: agrees (4 h)</button><button id="retellSampleDecline">Mock call: declines</button></div></div>` +
+      (mockMode
+        ? `<div class="retell-sub"><span class="retell-tag mock">MOCK · Retell AI</span><p class="retell-text">Simulate a post-call result. No call is placed.</p>` +
+          `<div class="retell-actions"><button id="retellSampleAgree">Mock call: agrees (4 h)</button><button id="retellSampleDecline">Mock call: declines</button></div></div>`
+        : "") +
       (records
-        .map(card)
+        .map((r, i) => (shown(r) ? card(r, i) : ""))
         .reverse()
         .join("") || '<p class="retell-text">No call results yet.</p>') +
-      (records.length ? '<button id="retellExport" class="wide">Export call records (mock and real)</button>' : "");
+      (records.some(shown) ? `<button id="retellExport" class="wide">Export call records${mockMode ? " (mock and real)" : ""}</button>` : "");
     const target = () => homes.find((h) => h.id === selected) || homes[0];
     const mock = (decision, hours) => {
       if (!homes.length) return log("Retell (mock): load example homes first.");
       receive(R.sample("mock-" + Date.now() + "-" + ++mockCount, target().id, decision, hours));
     };
-    $("retellSampleAgree").onclick = () => mock("agree", 4);
-    $("retellSampleDecline").onclick = () => mock("decline", 0);
+    if (mockMode) {
+      $("retellSampleAgree").onclick = () => mock("agree", 4);
+      $("retellSampleDecline").onclick = () => mock("decline", 0);
+    }
     box.querySelectorAll("[data-retellconfirm]").forEach(
       (el) => (el.onclick = () => confirmResponse(records[+el.dataset.retellconfirm])),
     );
@@ -253,14 +266,15 @@ if (typeof document !== "undefined") {
     );
     if ($("retellExport"))
       $("retellExport").onclick = () => {
+        // Exports what the list shows: MOCK records only in developer mode. The full list stays in memory.
         const url = URL.createObjectURL(
-            new Blob([JSON.stringify({ simulation: true, source: "PoweruP Retell (each record's source: MOCK, WEB CALL or LIVE TEST)", exportedAt: now(), records }, null, 2)], {
+            new Blob([JSON.stringify({ simulation: true, source: "PoweruP Retell (each record's source: MOCK, WEB CALL or LIVE TEST)", exportedAt: now(), records: records.filter(shown) }, null, 2)], {
               type: "application/json",
             }),
           ),
           a = document.createElement("a");
         a.href = url;
-        a.download = "PoweruP-retell-mock.json";
+        a.download = mockMode ? "PoweruP-retell-mock.json" : "PoweruP-retell-calls.json";
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       };
