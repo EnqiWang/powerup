@@ -121,6 +121,25 @@ service in Render. Fastest provider-side stop: disable the agent or rotate the A
    server-created access token. It is deprecated in 3.x and removed in 4.0; the newer `RetellClient` would put a key
    in the browser. Keep the version pinned; before upgrading to 4.x, revisit this design.
 
+## Staging on a fork's GitHub Pages (before merging into the team repo)
+
+Test the real frontend against the real backend from a fork (e.g. `https://dai0915.github.io/powerup/`) while
+the team site stays untouched. Pages origins are lowercase (`DAI0915` → `dai0915.github.io`).
+
+1. **Render → Environment:** `ALLOWED_ORIGINS=https://enqiwang.github.io,https://dai0915.github.io`. Leave
+   `TURNSTILE_HOSTNAMES` unset (it defaults to these hostnames) and keep `RETELL_ENABLED=false`.
+2. **Cloudflare → Turnstile → the widget → Hostnames:** add `dai0915.github.io` next to `enqiwang.github.io`.
+   Same keys, so nothing changes in Render or the repository.
+3. **Fork → Settings → Pages:** deploy from branch `feature/retell-talk-to-ai`, folder `/ (root)`.
+4. **Kill-switch check (no credits):** open `https://dai0915.github.io/powerup/planner.html?demo=1&map=0#talk-to-ai`.
+   The panel should say live calls are switched off, with no CORS error in the console, and the mock buttons
+   should work. From a terminal: `curl -i -H "Origin: https://dai0915.github.io" https://<service>.onrender.com/retell/config`
+   must return 200, `access-control-allow-origin: https://dai0915.github.io` and `"live":false`.
+5. **Live voice test (spends credits):** set `RETELL_ENABLED=true`, make one short call, confirm the pending
+   result appears and Confirm/Discard work, then set it back to `false`.
+6. **After the team merges:** remove `https://dai0915.github.io` from `ALLOWED_ORIGINS` and the Turnstile widget,
+   and turn Pages off on the fork if it is no longer needed.
+
 ## Local development (no Retell, no credits)
 
 ```bash

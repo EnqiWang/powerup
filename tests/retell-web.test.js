@@ -43,6 +43,14 @@ test("frontend accepts only an https backend (or localhost http) from the meta t
   for (const bad of ["http://powerup.example", "https://x.onrender.com/path", "javascript:alert(1)", ""]) assert.doesNotMatch(bad, re);
 });
 
+test("planner's configured backend is a bare https origin the frontend accepts, and the page carries no secrets", () => {
+  const planner = read("planner.html"),
+    backend = planner.match(/<meta name="powerup-retell-backend" content="([^"]*)" \/>/)[1];
+  assert.equal(backend, "https://powerup-retell-api.onrender.com");
+  assert.match(backend, /^https:\/\/[^/]+$/);
+  assert.doesNotMatch(planner, /RETELL_API_KEY|TURNSTILE_SECRET|SESSION_SECRET|key_[A-Za-z0-9]{16,}|0x4AAA|agent_[A-Za-z0-9]{8,}/);
+});
+
 // Runs the real browser parts of retell-mock.js (and optionally retell-web.js) against a tiny fake DOM.
 function page({ web = false, backend = "" } = {}) {
   const els = {},
