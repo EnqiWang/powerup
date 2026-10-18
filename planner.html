@@ -5,6 +5,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#080f17" />
+  <!-- Talk to AI: HTTPS origin of the Retell backend on Render (see DEPLOY-RENDER.md). Empty = voice calls off, mock only. -->
+  <meta name="powerup-retell-backend" content="" />
   <title>PoweruP · Detailed planner</title>
   <script>
     try {
@@ -21,6 +23,7 @@
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="style.css?v=23" />
   <link rel="stylesheet" href="demo.css?v=23" />
+  <link rel="stylesheet" href="retell.css?v=2" />
 </head>
 
 <body>
@@ -80,7 +83,7 @@
           <p>See which homes have enough backup power, and make a plan for those that need help.</p>
         </div>
         <div class="global-actions"><a href="./">Back to circuit replay</a>
-          <button id="jumpNotify">Resident alerts ↓</button><button id="guided" class="primary">Start guided demo
+          <button id="talkToAi">Talk to AI 🎙</button><button id="jumpNotify">Resident alerts ↓</button><button id="guided" class="primary">Start guided demo
             ▶</button><button id="reset">Reset session</button><button id="export">Export scenario ↓</button>
         </div>
       </div>
@@ -515,6 +518,8 @@
   <script src="visual.js?v=23"></script>
   <script src="demo.js?v=23"></script>
   <script src="ui.js?v=23"></script>
+  <script src="retell-mock.js?v=4"></script>
+  <script src="retell-web.js?v=2"></script>
 </body>
 
 </html>

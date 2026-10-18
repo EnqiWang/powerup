@@ -1,0 +1,43 @@
+# Render Blueprint: the PoweruP Retell backend (API + webhooks only). The website stays on GitHub Pages.
+# See DEPLOY-RENDER.md. Secrets use `sync: false`: Render asks for them in the dashboard; never stored in git.
+services:
+  - type: web
+    name: powerup-retell
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node retell-server.js
+    healthCheckPath: /retell/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Kill switch: live calls stay off until you set this to "true" in the dashboard.
+      - key: RETELL_ENABLED
+        value: "false"
+      - key: ALLOWED_ORIGINS
+        value: https://enqiwang.github.io
+      - key: RETELL_API_KEY
+        sync: false
+      - key: RETELL_AGENT_ID
+        sync: false
+      - key: TURNSTILE_SITE_KEY
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: MAX_CALL_SECONDS
+        value: "120"
+      - key: MAX_CONCURRENT_CALLS
+        value: "2"
+      - key: MAX_CALLS_PER_DAY
+        value: "20"
+      - key: SESSION_CALLS_PER_HOUR
+        value: "2"
+      - key: IP_CALLS_PER_HOUR
+        value: "4"
+      - key: CLIENT_IP_SOURCE
+        value: xff
+      - key: TRUST_PROXY_HOPS
+        value: "1"

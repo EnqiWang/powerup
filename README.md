@@ -10,6 +10,7 @@ Start the local server with `npm start`, then open `http://localhost:8004/`. Use
 | `/planner.html?demo=1&map=0` | Previous detailed planner with saved example data and offline outline map |
 | `/planner.html` | Previous detailed planner with its existing data-source options |
 | `/poster.html` | Redirects to the home page; no poster button |
+| `/planner.html?demo=1&map=0#talk-to-ai` | **Talk to AI**: browser voice call with a Retell AI agent (backend on Render); the result needs operator Confirm. Mock buttons work without it. See [DEPLOY-RENDER.md](DEPLOY-RENDER.md) |
 
 The simulation is not live household telemetry or a utility dispatch system. Live SCE queries provide historical circuit evidence; they do not replace the saved simulation's assumptions. See [DATA_SOURCES.md](DATA_SOURCES.md) for endpoints, limitations, and the verified duplicate-file cleanup.
 
